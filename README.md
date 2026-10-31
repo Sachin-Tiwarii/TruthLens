@@ -292,17 +292,6 @@ The production implementation should include:
 - Appropriate file retention and deletion policies.
 
 Never commit `.env` files, credentials, API keys, or other secrets.
-
-## Contributors
-
-**Frontend Development:** Sachin Tiwari
-
-**Backend & AI Development:** Team Vertex
-
-## License
-
-This project is developed as a hackathon project. Licensing and third-party model usage terms should be reviewed before public production distribution.
-
 ---
 
 **TruthLens — A clearer way to understand what's real in a world of synthetic media.**
