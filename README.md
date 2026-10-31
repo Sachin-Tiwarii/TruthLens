@@ -277,8 +277,6 @@ This document covers:
 | Analysis history | UI with sample data |
 | PDF report | Frontend printable report |
 
-**Important:** The current frontend demonstration does not perform actual AI media detection. Real verification results will be available after integration with the backend and AI services.
-
 ## Security & Privacy
 
 The production implementation should include:
@@ -291,7 +289,6 @@ The production implementation should include:
 - Secure API configuration.
 - Appropriate file retention and deletion policies.
 
-Never commit `.env` files, credentials, API keys, or other secrets.
 ---
 
 **TruthLens — A clearer way to understand what's real in a world of synthetic media.**
