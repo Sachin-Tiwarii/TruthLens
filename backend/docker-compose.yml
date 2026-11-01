@@ -18,6 +18,8 @@ services:
       - DATABASE_URL=sqlite:////app/data/truthlens_history.db
       # JWT signing key. Set it in backend/.env (see .env.example); the fallback is for local dev only.
       - SECRET_KEY=${SECRET_KEY:-dev_only_insecure_secret_change_me}
+      # Comma-separated browser origins allowed to call the API (the frontend dev server).
+      - CORS_ORIGINS=${CORS_ORIGINS:-http://localhost:5173,http://127.0.0.1:5173}
       # - LOG_LEVEL=debug # Optional: for more verbose API logs
     depends_on:
       - npr_deepfakedetection

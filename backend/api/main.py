@@ -359,15 +359,6 @@ async def startup_event_api():
 
 
 # --- Middleware ---
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["GET", "POST"],
-    allow_headers=["*"],
-)
-
-
 @app.middleware("http")
 async def request_id_and_size_limit_middleware(request: Request, call_next):
     request.state.request_id = str(uuid.uuid4())
@@ -423,6 +414,30 @@ async def catch_exceptions_middleware(request: Request, call_next):
                 "error_type": type(e).__name__,
             },
         )
+
+
+# CORS is added last so it is the outermost middleware: every response, including the
+# 413/500 JSON errors produced by the middleware above, gets CORS headers. Otherwise the
+# browser reports those errors as CORS failures and the frontend can't read the message.
+CORS_ALLOWED_ORIGINS = [
+    origin.strip().rstrip("/")
+    for origin in get_environment_variable(
+        "CORS_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173"
+    ).split(",")
+    if origin.strip()
+]
+logger.info(f"CORS allowed origins: {CORS_ALLOWED_ORIGINS}")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=CORS_ALLOWED_ORIGINS,
+    # Auth uses a Bearer token header, not cookies, so credentials are not needed.
+    allow_credentials=False,
+    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_headers=["Authorization", "Content-Type"],
+    expose_headers=["X-Request-ID"],
+    max_age=600,
+)
 
 
 # --- Pydantic Models ---
