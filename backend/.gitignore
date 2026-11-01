@@ -3,4 +3,4 @@ __pycache__/
 *.pyc
 *.db
 *.egg-info/
-deepsafe_test_results/
+truthlens_test_results/
