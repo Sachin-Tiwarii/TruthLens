@@ -1,13 +1,22 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
-import { ScanEye, Eye, EyeOff, Fingerprint, Layers3, FileCheck2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Eye, EyeOff } from 'lucide-react'
+import ForensicSpecimen from './ForensicSpecimen.jsx'
 import './pages.css'
 
-const points = [
-  { icon: Fingerprint, text: 'Every file is SHA-256 hashed on receipt.' },
-  { icon: Layers3, text: 'Per-model scores with the evidence behind them.' },
-  { icon: FileCheck2, text: 'Reports built for audit and review.' },
-]
+// Matches the 900px breakpoint where pages.css hides the side panel, so the
+// WebGL scene only runs while it is actually on screen.
+const WIDE_QUERY = '(min-width: 901px)'
+
+function useIsWide() {
+  const [wide, setWide] = useState(() => window.matchMedia(WIDE_QUERY).matches)
+  useEffect(() => {
+    const mq = window.matchMedia(WIDE_QUERY)
+    const onChange = (e) => setWide(e.matches)
+    mq.addEventListener('change', onChange)
+    return () => mq.removeEventListener('change', onChange)
+  }, [])
+  return wide
+}
 
 export function PasswordField({ id, label, value, onChange, autoComplete, placeholder, minLength }) {
   const [show, setShow] = useState(false)
@@ -41,24 +50,19 @@ export function PasswordField({ id, label, value, onChange, autoComplete, placeh
 }
 
 export default function AuthLayout({ title, subtitle, children, switchText }) {
+  const wide = useIsWide()
+
   return (
     <div className="tl-page tl-auth">
-      <aside className="tl-auth-side" aria-hidden="false">
-        <Link to="/" className="tl-auth-brand" aria-label="TruthLens home">
-          <span className="tl-mark"><ScanEye size={18} aria-hidden="true" /></span>
-          <span>TruthLens</span>
-        </Link>
-
+      <aside className="tl-auth-side">
         <div className="tl-auth-pitch">
           <h2>Evidence you can stand behind.</h2>
-          <ul>
-            {points.map(({ icon: Icon, text }) => (
-              <li key={text}>
-                <Icon size={16} aria-hidden="true" />
-                {text}
-              </li>
-            ))}
-          </ul>
+          <p>Upload an image, audio clip, or video. You get a verdict, a confidence score, and the evidence behind it.</p>
+        </div>
+
+        <div className="tl-auth-stage">
+          <div className="tl-auth-stage-glow" />
+          {wide && <ForensicSpecimen />}
         </div>
       </aside>
 

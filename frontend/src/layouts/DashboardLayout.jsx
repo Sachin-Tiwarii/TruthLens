@@ -13,14 +13,15 @@ export default function DashboardLayout() {
     return <Navigate to="/login" replace state={{ from: pathname }} />
   }
 
+  // .app-shell carries the workspace tokens, fonts and reset defined in pages/app.css.
   return (
-    <div className="workspace">
+    <div className="app-shell">
       <Sidebar />
-      <div className="workspace-main">
-        <main className="workspace-content">
+      <main className="app-main">
+        <div className="app-main-inner">
           <Outlet />
-        </main>
-      </div>
+        </div>
+      </main>
     </div>
   )
 }

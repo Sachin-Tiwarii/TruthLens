@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, FileText, FileSearch, CheckCircle2, AlertCircle, ShieldAlert } from 'lucide-react'
+import { ArrowLeft, FileText, CheckCircle2, AlertCircle, ShieldAlert } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { demoResult, sampleAnalyses } from '../data/mockData'
 import LoadingAnimation from '../components/LoadingAnimation'
-import VerdictBadge, { verdictTone } from '../components/VerdictBadge'
+import { verdictTone } from '../components/VerdictBadge'
 import './app.css'
 
 const toneIcon = { ok: CheckCircle2, warn: AlertCircle, bad: ShieldAlert }
@@ -56,7 +56,7 @@ export default function Results() {
   const confidence = result.confidence || demoResult.confidence
 
   return (
-    <div>
+    <div className="as-page">
       <div className="app-toolbar">
         <Link to="/history" className="app-link"><ArrowLeft size={14} aria-hidden="true" /> History</Link>
         <div className="app-toolbar-right">
@@ -67,71 +67,85 @@ export default function Results() {
         </div>
       </div>
 
-      <header className="app-head">
-        <h1>Assessment</h1>
-        <p>{result.name} · {result.type} · {result.date || 'Just now'}</p>
-      </header>
-
-      <section className="app-panel app-verdict">
-        <div className="app-verdict-main">
-          <span className={`app-verdict-icon ${tone}`}><VerdictIcon size={22} aria-hidden="true" /></span>
-          <div>
-            <VerdictBadge verdict={verdict} />
-            <p>{result.summary || demoResult.summary}</p>
-          </div>
+      {/* Verdict leads; the fused confidence sits beside it as the one big number. */}
+      <section className="as-hero" aria-labelledby="as-verdict">
+        <div className="as-verdict">
+          <p className="as-file">
+            <span>{result.name}</span>
+            <span>{result.type}</span>
+            <span>{result.date || 'Just now'}</span>
+          </p>
+          <h1 id="as-verdict" className={`as-title ${tone}`}>
+            <VerdictIcon size={30} strokeWidth={2.25} aria-hidden="true" />
+            {verdict}
+          </h1>
+          <p className="as-summary">{result.summary || demoResult.summary}</p>
         </div>
 
-        <div className="app-confidence">
-          <span className="app-label">Confidence score</span>
-          <div className="app-confidence-score">{confidence}<span>%</span></div>
-          <div className="app-meter" role="img" aria-label={`Confidence ${confidence} percent`}>
+        <div className="as-score">
+          <span className="as-label">Confidence</span>
+          <div className="as-score-value">{confidence}<span>%</span></div>
+          <div className="as-meter" role="img" aria-label={`Confidence ${confidence} percent`}>
             <motion.span
               initial={{ width: 0 }}
               animate={{ width: `${confidence}%` }}
-              transition={{ duration: 0.9, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.9, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
             />
           </div>
-          <small>Fused across all models. A higher score means more certainty in the verdict.</small>
+          <p className="as-score-note">Fused across all models. A higher score means more certainty in the verdict.</p>
         </div>
       </section>
 
-      <div className="app-section-head"><h2 className="app-h2">Model observations</h2></div>
-      <section className="app-panel app-models">
-        {demoResult.models.map((m) => (
-          <div className="app-model" key={m.name}>
-            <div>
-              <strong>{m.name}</strong>
-              <small>{m.result}</small>
-            </div>
-            <div className="app-model-meter">
-              <div className="app-meter"><span style={{ width: `${m.score}%` }} /></div>
-              <b>{m.score}%</b>
-            </div>
+      <section className="as-section" aria-labelledby="as-models">
+        <h2 id="as-models" className="as-h2">Model observations</h2>
+        <div className="as-models" role="table" aria-label="Per-model manipulation likelihood">
+          <div className="as-model as-model-head" role="row">
+            <span role="columnheader">Model</span>
+            <span role="columnheader">Finding</span>
+            <span role="columnheader" className="as-scale-head">
+              Manipulation likelihood
+              <span className="as-scale-ticks" aria-hidden="true"><i>0</i><i>50</i><i>100</i></span>
+            </span>
           </div>
-        ))}
+          {demoResult.models.map((m) => (
+            <div className={`as-model${m.score >= 50 ? ' flagged' : ''}`} role="row" key={m.name}>
+              <strong role="cell">{m.name}</strong>
+              <span role="cell" className="as-finding">{m.result}</span>
+              <span role="cell" className="as-bar-cell">
+                <span className="as-bar" aria-hidden="true"><b style={{ width: `${m.score}%` }} /></span>
+                <code>{m.score}%</code>
+              </span>
+            </div>
+          ))}
+        </div>
+        <p className="as-legend">The marker on each bar is the 50% decision threshold. Scores above it count toward a manipulation verdict.</p>
       </section>
 
-      <div className="app-section-head"><h2 className="app-h2">Evidence</h2></div>
-      <ul className="app-panel app-evidence">
-        {demoResult.evidence.map((e) => (
-          <li key={e}><FileSearch size={15} aria-hidden="true" /><span>{e}</span></li>
-        ))}
-      </ul>
+      <div className="as-split">
+        <section className="as-section" aria-labelledby="as-evidence">
+          <h2 id="as-evidence" className="as-h2">Evidence</h2>
+          <ol className="as-evidence">
+            {demoResult.evidence.map((e) => <li key={e}>{e}</li>)}
+          </ol>
+        </section>
 
-      <div className="app-section-head"><h2 className="app-h2">Integrity and audit trail</h2></div>
-      <dl className="app-panel app-integrity">
-        {integrity.map(({ label, value }) => (
-          <div key={label}>
-            <dt>{label}</dt>
-            <dd>{value}</dd>
-          </div>
-        ))}
-      </dl>
-
-      <div className="app-note">
-        <AlertCircle size={16} aria-hidden="true" />
-        <p>Sample data, not a real analysis. Connect a backend for genuine model results. Automated detection can produce false positives and negatives.</p>
+        <section className="as-section" aria-labelledby="as-integrity">
+          <h2 id="as-integrity" className="as-h2">Integrity and audit trail</h2>
+          <dl className="as-integrity">
+            {integrity.map(({ label, value }) => (
+              <div key={label}>
+                <dt>{label}</dt>
+                <dd>{value}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
       </div>
+
+      <p className="as-caveat">
+        <AlertCircle size={15} aria-hidden="true" />
+        Sample data, not a real analysis. Connect a backend for genuine model results. Automated detection can produce false positives and negatives.
+      </p>
     </div>
   )
 }
