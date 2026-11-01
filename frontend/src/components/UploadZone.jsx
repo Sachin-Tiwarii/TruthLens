@@ -1,8 +1,8 @@
 import { useRef, useState } from 'react'
 import { UploadCloud, FileImage, FileAudio, FileVideo, X } from 'lucide-react'
 
-const ACCEPT = '.png,.jpg,.jpeg,.webp,.mp3,.wav,.m4a,.mp4,.mov,.webm'
-const ALLOWED = /\.(png|jpe?g|webp|mp3|wav|m4a|mp4|mov|webm)$/i
+const ACCEPT = '.png,.jpg,.jpeg,.webp,.mp3,.wav,.m4a,.flac,.ogg,.mp4,.mov,.webm'
+const ALLOWED = /\.(png|jpe?g|webp|mp3|wav|m4a|flac|ogg|mp4|mov|webm)$/i
 
 const formatSize = (bytes) =>
   bytes < 1024 * 1024

@@ -4,3 +4,6 @@ __pycache__/
 *.db
 *.egg-info/
 truthlens_test_results/
+
+# Large model weights (downloaded during the Docker build)
+models/audio/vocoder_artifacts/weights/*.pth

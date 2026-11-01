@@ -1,30 +1,22 @@
 #!/bin/bash
-# Download pretrained model weights for Vocoder Artifacts
-# Place this in models/audio/vocoder_artifacts/
+# Manual fallback for the Vocoder Artifacts weights (~100 MB).
+# Only needed if the automatic download in the Dockerfile fails. Run from this folder,
+# then rebuild:  docker compose build vocoder_artifacts
+set -e
 
-echo "🔽 Downloading Vocoder Artifacts pretrained weights..."
-echo "⚠️  Note: This requires ~100MB download"
+OUT="weights/vocoder_artifacts.pth"
+FILE_URL="https://drive.google.com/file/d/15qOi26czvZddIbKP_SOR8SLQFZK8cf8E/view"
 
-# Create models directory
-mkdir -p models
+mkdir -p weights
+command -v gdown >/dev/null 2>&1 || pip install gdown
 
-# Download using gdown (requires pip install gdown)
-if ! command -v gdown &> /dev/null; then
-    echo "Installing gdown..."
-    pip install gdown
-fi
+gdown --fuzzy "$FILE_URL" -O "$OUT"
 
-# Google Drive file ID
-FILE_ID="15qOi26czvZddIbKP_SOR8SLQFZK8cf8E"
-
-# Download
-gdown --id $FILE_ID -O models/best_model.pth
-
-if [ -f "models/best_model.pth" ]; then
-    echo "✓ Model weights downloaded successfully!"
-    echo "  Location: $(pwd)/models/best_model.pth"
+if [ -s "$OUT" ]; then
+    echo "Weights saved to $(pwd)/$OUT"
 else
-    echo "❌ Download failed. Please download manually from:"
-    echo "   https://drive.google.com/file/d/15qOi26czvZddIbKP_SOR8SLQFZK8cf8E/view"
+    echo "Download failed. Download it in a browser from:"
+    echo "  $FILE_URL"
+    echo "and save it as $(pwd)/$OUT"
     exit 1
 fi

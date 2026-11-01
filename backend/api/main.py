@@ -88,7 +88,10 @@ CONTENT_TYPE_TO_MEDIA_TYPE_MAP: Dict[str, str] = {
     "video/x-matroska": "video",
     "video/webm": "video",
     "audio/wav": "audio",
+    "audio/x-wav": "audio",
+    "audio/wave": "audio",
     "audio/mpeg": "audio",
+    "audio/mp4": "audio",
     "audio/flac": "audio",
     "audio/ogg": "audio",
     "audio/x-m4a": "audio",
@@ -684,7 +687,13 @@ def query_model_api(
                     "error": f"Request to '{model_name}' timed out after {MAX_RETRIES+1} attempts."
                 }
         except requests.exceptions.HTTPError as e:
-            error_text = e.response.text[:200] if e.response else "No response text."
+            # Note: a Response is falsy for 4xx/5xx, so compare with None explicitly.
+            error_text = "No response text."
+            if e.response is not None:
+                try:
+                    error_text = str(e.response.json().get("error") or e.response.text)[:200]
+                except ValueError:
+                    error_text = e.response.text[:200]
             logger.error(
                 f"Request {request_id}: HTTPError from '{model_name}' ({media_type}): {e.response.status_code} - {error_text} (attempt {attempt+1})."
             )
@@ -692,7 +701,8 @@ def query_model_api(
                 pass
             else:
                 return {
-                    "error": f"Model '{model_name}' returned HTTP {e.response.status_code}: {error_text}"
+                    "error": f"Model '{model_name}' returned HTTP {e.response.status_code}: {error_text}",
+                    "reason": error_text,
                 }
         except requests.exceptions.RequestException as e:
             logger.error(
@@ -1104,6 +1114,18 @@ async def run_prediction(
             model_query_results,
             input_data.threshold,
         )
+        results = list(model_query_results.values())
+        if all(r.get("unavailable") for r in results):
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+                detail=f"{media_type.capitalize()} analysis isn't available right now: no {media_type} detection model is running.",
+            )
+        reasons = {r.get("reason") for r in results if not r.get("unavailable")}
+        if len(reasons) == 1 and None not in reasons:
+            # Every model rejected the file for the same reason (e.g. too short, unreadable).
+            raise HTTPException(
+                status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=reasons.pop()
+            )
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=f"All base models for '{media_type}' failed to process the request.",

@@ -9,7 +9,7 @@ ENV PIP_DEFAULT_TIMEOUT=1000 PIP_RETRIES=10
 # here too so requirements.txt finds it already installed.
 RUN pip install --no-cache-dir \
     torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 \
-    --index-url https://download.pytorch.org/whl/cpu
+    --index-url https://download.pytorch.org/whl/cpu --extra-index-url https://pypi.org/simple
 
 WORKDIR /app
 

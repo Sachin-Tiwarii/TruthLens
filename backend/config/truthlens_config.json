@@ -45,6 +45,22 @@
         "*.mkv",
         "*.webm"
       ]
+    },
+    "audio": {
+      "model_endpoints": {
+        "vocoder_artifacts": "http://vocoder_artifacts:8001/predict"
+      },
+      "health_endpoints": {
+        "vocoder_artifacts": "http://vocoder_artifacts:8001/health"
+      },
+      "supported_extensions": [
+        "*.wav",
+        "*.mp3",
+        "*.m4a",
+        "*.flac",
+        "*.ogg"
+      ],
+      "max_upload_size_bytes": 52428800
     }
   },
   "default_output_dir_base": "./truthlens_test_results",

@@ -1,77 +1,41 @@
-# Vocoder Artifacts Audio Detection Model
+# Vocoder Artifacts — audio deepfake detector
 
-## Overview
-This directory contains the integration of the **Vocoder Artifacts** audio deepfake detection model into TruthLens.
+Detects AI-synthesized speech by looking for artifacts left by neural vocoders.
 
-**Source**: [csun22/Synthetic-Voice-Detection-Vocoder-Artifacts](https://github.com/csun22/Synthetic-Voice-Detection-Vocoder-Artifacts)
+- **Source:** [csun22/Synthetic-Voice-Detection-Vocoder-Artifacts](https://github.com/csun22/Synthetic-Voice-Detection-Vocoder-Artifacts) (MIT licence), pinned to commit `74b8527`
+- **Paper:** Sun et al., *AI-Synthesized Voice Detection Using Neural Vocoder Artifacts*, CVPR 2023 Workshops
+- **Model:** RawNet2 variant with a binary real/fake head plus a 7-way vocoder head
+- **Trained on:** LibriSeVoc (English read speech; WaveGrad, DiffWave, Parallel WaveGAN, WaveRNN, WaveNet, MelGAN)
 
-**Paper**: [AI-Synthesized Voice Detection Using Neural Vocoder Artifacts (CVPR 2023)](https://openaccess.thecvf.com/content/CVPR2023W/WMF/html/Sun_AI-Synthesized_Voice_Detection_Using_Neural_Vocoder_Artifacts_CVPRW_2023_paper.html)
+## How audio is processed
 
-## Model Architecture
-- **Base**: Modified RawNet2 with multi-loss training
-- **Input**: Audio waveform (16kHz, ~4 seconds)
-- **Output**: Binary classification (Real/Fake)
-- **Performance**: 4.54% EER on ASVspoof dataset
+Matches the original `eval.py`:
 
-## Downloading Model Weights
-Due to file size (~100MB), model weights are NOT included in the Docker image by default.
+1. Any format ffmpeg can read (wav, mp3, m4a, flac, ogg) is decoded to 24 kHz mono.
+2. The audio is split into 4-second segments (96,000 samples). Clips under 4 s are padded by repeating them.
+3. Real/fake probabilities are averaged over the segments. At most 15 segments (~60 s, evenly spread) are used, and at most the first 120 s of a file are decoded.
 
-You must download them separately:
+## Weights
+
+The Docker build downloads them from Google Drive automatically. If that fails (Drive sometimes blocks automated downloads), download the file manually:
+
+https://drive.google.com/file/d/15qOi26czvZddIbKP_SOR8SLQFZK8cf8E/view
+
+Save it as `weights/vocoder_artifacts.pth` in this folder (or run `download_weights.sh`), then rebuild:
 
 ```bash
-# Option 1: Direct download (requires Google Drive authentication)
-wget --load-cookies /tmp/cookies.txt "https://drive.google.com/uc?export=download&id=15qOi26czvZddIbKP_SOR8SLQFZK8cf8E" -O best_model.pth
-
-# Option 2: Manual download
-# Visit: https://drive.google.com/file/d/15qOi26czvZddIbKP_SOR8SLQFZK8cf8E/view
-# Download and save to: models/audio/vocoder_artifacts/models/best_model.pth
+docker compose build vocoder_artifacts
+docker compose up -d vocoder_artifacts
 ```
 
-## Directory Structure
-```
-models/audio/vocoder_artifacts/
-├── Dockerfile          # Container definition
-├── api.py              # Flask API wrapper
-├── requirements.txt    # Python dependencies
-├── temp_repo/          # Cloned original repository (model code)
-├── models/             # Model weights directory
-│   └── best_model.pth  # Pretrained weights (download separately)
-└── README.md           # This file
-```
+The `.pth` file is gitignored.
 
-## API Endpoints
+## API (port 8001)
 
-### Health Check
-```
-GET /health
-Response: {"status": "healthy", "model": "Vocoder Artifacts Detection", "device": "cpu"}
-```
+- `GET /health` — `status` is `error` if the weights are missing
+- `POST /predict` — body `{"audio_data": "<base64 file>", "threshold": 0.5}`. Returns `probability` (likelihood of fake), `prediction`, `class`, `inference_time`, `audio_duration_seconds`, `segments_analyzed` and `vocoder_probabilities`.
+- `POST /unload` — frees the model from memory
 
-### Prediction
-```
-POST /predict
-Body: {
-  "audio_data": "base64_encoded_wav_file",
-  "threshold": 0.5
-}
+## Limitations
 
-Response: {
-  "probability": 0.87,
-  "prediction": 1,
-  "class": "fake",
-  "inference_time": 0.12,
-  "sample_rate": 16000
-}
-```
-
-## Testing
-```bash
-# Start the service
-docker-compose up -d vocoder_artifacts
-
-# Check health
-curl http://localhost:8001/health
-
-# Test prediction (requires sample audio)
-python truthlens_test.py test --media-type audio --input test_samples/sample_audio.wav
-```
+Trained on English read speech made by older vocoders. Expect weaker results on other languages, phone or compressed recordings, background noise and modern voice-cloning systems.

@@ -15,6 +15,7 @@ const MODEL_LABELS = {
   spsl_deepfake_detection: 'SPSL (face forgery)',
   ucf_deepfake_detection: 'UCF (face forgery)',
   cross_efficient_vit: 'Cross Efficient ViT (video frames)',
+  vocoder_artifacts: 'Vocoder artifacts (synthetic voice)',
 }
 
 export const verdictLabel = (verdict) => VERDICT_LABELS[verdict] || 'Inconclusive'

@@ -123,7 +123,7 @@ export default function Analyze() {
             <strong>Supported media</strong>
             <div>
               <span><Image size={15} /> JPG, PNG, WEBP</span>
-              <span><AudioLines size={15} /> MP3, WAV, M4A (coming soon)</span>
+              <span><AudioLines size={15} /> MP3, WAV, M4A, FLAC, OGG</span>
               <span><Video size={15} /> MP4, MOV, WEBM</span>
             </div>
           </div>
