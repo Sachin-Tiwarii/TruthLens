@@ -1,6 +1,9 @@
 # Use a slim Python base image
 FROM python:3.9-slim
 
+# Slow or flaky connections: wait longer and retry more before a download fails.
+ENV PIP_DEFAULT_TIMEOUT=1000 PIP_RETRIES=10
+
 WORKDIR /app
 
 # Install git, wget, unzip, build-essential, and other common dependencies

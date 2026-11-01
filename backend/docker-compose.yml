@@ -46,35 +46,37 @@ services:
     networks:
       - truthlens-network
 
-  # yermandy_clip_detection:
-  #   build: ./models/image/yermandy_clip_detection
-  #   container_name: truthlens-yermandy-clip-detection
-  #   ports:
-  #     - "5002:5002"
-  #   restart: unless-stopped
-  #   environment:
-  #     - MODEL_PORT=5002
-  #     - MODEL_PATH=model_code/weights/model.ckpt
-  #     - PRELOAD_MODEL=false
-  #     - MODEL_TIMEOUT=600
-  #     - USE_GPU=false
-  #   networks:
-  #     - truthlens-network
+  yermandy_clip_detection:
+    build: ./models/image/yermandy_clip_detection
+    container_name: truthlens-yermandy-clip-detection
+    profiles: ["extra"]  # optional model: start with --profile extra or COMPOSE_PROFILES=extra
+    ports:
+      - "5002:5002"
+    restart: unless-stopped
+    environment:
+      - MODEL_PORT=5002
+      - MODEL_PATH=model_code/weights/model.ckpt
+      - PRELOAD_MODEL=false
+      - MODEL_TIMEOUT=600
+      - USE_GPU=false
+    networks:
+      - truthlens-network
 
-  # wavelet_clip_detection:
-  #   build: ./models/image/wavelet_clip_detection
-  #   container_name: truthlens-wavelet-clip-detection
-  #   ports:
-  #     - "5003:5003"
-  #   restart: unless-stopped
-  #   environment:
-  #     - MODEL_PORT=5003
-  #     - MODEL_PATH=model_code/weights/clip_wavelet_best.pth
-  #     - PRELOAD_MODEL=false
-  #     - MODEL_TIMEOUT=600
-  #     - USE_GPU=false
-  #   networks:
-  #     - truthlens-network
+  wavelet_clip_detection:
+    build: ./models/image/wavelet_clip_detection
+    container_name: truthlens-wavelet-clip-detection
+    profiles: ["extra"]  # optional model: start with --profile extra or COMPOSE_PROFILES=extra
+    ports:
+      - "5003:5003"
+    restart: unless-stopped
+    environment:
+      - MODEL_PORT=5003
+      - MODEL_PATH=model_code/weights/clip_wavelet_best.pth
+      - PRELOAD_MODEL=false
+      - MODEL_TIMEOUT=600
+      - USE_GPU=false
+    networks:
+      - truthlens-network
 
   universalfakedetect:
     build:
@@ -92,47 +94,50 @@ services:
     networks:
       - truthlens-network
 
-  # trufor:
-  #   build: ./models/image/trufor
-  #   container_name: truthlens-trufor
-  #   ports:
-  #     - "5005:5005"
-  #   restart: unless-stopped
-  #   environment:
-  #     - MODEL_PORT=5005
-  #     - PRELOAD_MODEL=false
-  #     - MODEL_TIMEOUT=600
-  #     - USE_GPU=false
-  #   networks:
-  #     - truthlens-network
+  trufor:
+    build: ./models/image/trufor
+    container_name: truthlens-trufor
+    profiles: ["extra"]  # optional model: start with --profile extra or COMPOSE_PROFILES=extra
+    ports:
+      - "5005:5005"
+    restart: unless-stopped
+    environment:
+      - MODEL_PORT=5005
+      - PRELOAD_MODEL=false
+      - MODEL_TIMEOUT=600
+      - USE_GPU=false
+    networks:
+      - truthlens-network
 
-  # spsl_deepfake_detection:
-  #   build: ./models/image/spsl_deepfake_detection
-  #   container_name: truthlens-spsl-deepfake-detection
-  #   ports:
-  #     - "5006:5006"
-  #   restart: unless-stopped
-  #   environment:
-  #     - MODEL_PORT=5006
-  #     - PRELOAD_MODEL=false
-  #     - MODEL_TIMEOUT=600
-  #     - USE_GPU=false
-  #   networks:
-  #     - truthlens-network
+  spsl_deepfake_detection:
+    build: ./models/image/spsl_deepfake_detection
+    container_name: truthlens-spsl-deepfake-detection
+    profiles: ["extra"]  # optional model: start with --profile extra or COMPOSE_PROFILES=extra
+    ports:
+      - "5006:5006"
+    restart: unless-stopped
+    environment:
+      - MODEL_PORT=5006
+      - PRELOAD_MODEL=false
+      - MODEL_TIMEOUT=600
+      - USE_GPU=false
+    networks:
+      - truthlens-network
 
-  # ucf_deepfake_detection:
-  #   build: ./models/image/ucf_deepfake_detection
-  #   container_name: truthlens-ucf-deepfake-detection
-  #   ports:
-  #     - "5007:5007"
-  #   restart: unless-stopped
-  #   environment:
-  #     - MODEL_PORT=5007
-  #     - PRELOAD_MODEL=false
-  #     - MODEL_TIMEOUT=600
-  #     - USE_GPU=false
-  #   networks:
-  #     - truthlens-network
+  ucf_deepfake_detection:
+    build: ./models/image/ucf_deepfake_detection
+    container_name: truthlens-ucf-deepfake-detection
+    profiles: ["extra"]  # optional model: start with --profile extra or COMPOSE_PROFILES=extra
+    ports:
+      - "5007:5007"
+    restart: unless-stopped
+    environment:
+      - MODEL_PORT=5007
+      - PRELOAD_MODEL=false
+      - MODEL_TIMEOUT=600
+      - USE_GPU=false
+    networks:
+      - truthlens-network
 
   cross_efficient_vit:
     build:

@@ -9,6 +9,11 @@ const VERDICT_LABELS = {
 const MODEL_LABELS = {
   npr_deepfakedetection: 'NPR (neighboring pixel relationships)',
   universalfakedetect: 'UniversalFakeDetect (CLIP)',
+  yermandy_clip_detection: 'CLIP deepfake detector (Yermandy)',
+  wavelet_clip_detection: 'Wavelet-CLIP',
+  trufor: 'TruFor (edit and splice detection)',
+  spsl_deepfake_detection: 'SPSL (face forgery)',
+  ucf_deepfake_detection: 'UCF (face forgery)',
   cross_efficient_vit: 'Cross Efficient ViT (video frames)',
 }
 
@@ -71,7 +76,10 @@ export function normalizeAnalysisDetail(detail) {
   const full = detail.full_response || {}
   const type = mediaTypeLabel(detail.media_type)
 
-  const models = Object.entries(full.model_results || {}).map(([key, result]) => {
+  const entries = Object.entries(full.model_results || {})
+  // Models whose service isn't running (optional, not built yet) aren't failures; hide them.
+  const skippedCount = entries.filter(([, r]) => r?.unavailable).length
+  const models = entries.filter(([, r]) => !r?.unavailable).map(([key, result]) => {
     if (!result || result.error) {
       return { key, name: modelLabel(key), result: 'Could not process this file', score: null }
     }
@@ -99,6 +107,11 @@ export function normalizeAnalysisDetail(detail) {
   models
     .filter((m) => m.score === null)
     .forEach((m) => evidence.push(`${m.name} did not return a result and was excluded.`))
+  if (skippedCount > 0) {
+    evidence.push(
+      `${skippedCount} optional model${skippedCount === 1 ? ' is' : 's are'} not installed and ${skippedCount === 1 ? 'was' : 'were'} skipped.`
+    )
+  }
   const seconds = detail.inference_time ?? full.total_inference_time_seconds
   if (seconds != null) evidence.push(`Processed in ${Number(seconds).toFixed(1)} s on CPU.`)
 

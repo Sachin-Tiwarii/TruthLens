@@ -1,9 +1,15 @@
 # Use a PyTorch base image
 FROM python:3.10-slim
 
+# Slow or flaky connections: wait longer and retry more before a download fails.
+ENV PIP_DEFAULT_TIMEOUT=1000 PIP_RETRIES=10
+
+# CPU-only wheels from the official index (the old torch_stable.html listing can make pip
+# fall back to PyPI's CUDA build plus several GB of NVIDIA libraries). torchaudio is pinned
+# here too so requirements.txt finds it already installed.
 RUN pip install --no-cache-dir \
-    torch==2.6.0 torchvision==0.21.0 \
-    -f https://download.pytorch.org/whl/cpu/torch_stable.html
+    torch==2.6.0 torchvision==0.21.0 torchaudio==2.6.0 \
+    --index-url https://download.pytorch.org/whl/cpu
 
 WORKDIR /app
 

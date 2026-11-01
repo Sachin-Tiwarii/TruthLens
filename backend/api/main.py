@@ -147,6 +147,16 @@ else:
 
 DEFAULT_TIMEOUT: int = int(ALL_MODEL_CONFIGS.get("default_api_timeout_seconds", 1200))
 MAX_RETRIES: int = int(ALL_MODEL_CONFIGS.get("default_max_retries", 1))
+MEMORY_OPTIMIZATION: bool = bool(ALL_MODEL_CONFIGS.get("memory_optimization", False))
+
+# Models whose service couldn't be reached (container not running) are skipped until this
+# time, so every request doesn't pay for DNS lookups and retries against missing services.
+MODEL_UNAVAILABLE_UNTIL: Dict[str, float] = {}
+UNAVAILABLE_MODEL_RECHECK_SECONDS: int = 600
+
+# Stacking needs at least this share of the models it was trained on to have answered.
+# Below it, imputing the missing inputs dominates the result, so we average instead.
+MIN_STACKING_COVERAGE: float = float(ALL_MODEL_CONFIGS.get("min_stacking_coverage", 0.85))
 META_MODEL_ARTIFACTS_DIR: str = get_environment_variable(
     "META_MODEL_ARTIFACTS_DIR", "/app/meta_model_artifacts"
 )
@@ -577,6 +587,8 @@ def check_model_health_api(model_name: str, media_type: str) -> Dict[str, Any]:
     try:
         response = requests.get(health_url, timeout=10)
         response.raise_for_status()
+        # Reachable again (e.g. a newly started optional model): stop skipping it.
+        MODEL_UNAVAILABLE_UNTIL.pop(f"{media_type}:{model_name}", None)
         return response.json()
     except requests.exceptions.RequestException as e:
         logger.warning(
@@ -624,6 +636,13 @@ def query_model_api(
 
     payload = {payload_key: encoded_media_data, "threshold": threshold}
 
+    unavailable_key = f"{media_type}:{model_name}"
+    if MODEL_UNAVAILABLE_UNTIL.get(unavailable_key, 0) > time.time():
+        return {
+            "error": f"Model service '{model_name}' is not running.",
+            "unavailable": True,
+        }
+
     for attempt in range(MAX_RETRIES + 1):
         try:
             response = requests.post(
@@ -631,10 +650,31 @@ def query_model_api(
             )
             response.raise_for_status()
             result = response.json()
+            MODEL_UNAVAILABLE_UNTIL.pop(unavailable_key, None)
             logger.info(
                 f"Request {request_id}: Model '{model_name}' ({media_type}) responded successfully (attempt {attempt+1})."
             )
             return result
+        except requests.exceptions.ConnectionError as e:
+            if isinstance(e, requests.exceptions.ConnectTimeout) and attempt < MAX_RETRIES:
+                logger.warning(
+                    f"Request {request_id}: Connect timeout for '{model_name}' (attempt {attempt+1}); retrying."
+                )
+                time.sleep(2**attempt)
+                continue
+            # The container isn't running (e.g. an optional model that hasn't been built):
+            # retrying won't help, so skip it now and for the next few minutes.
+            MODEL_UNAVAILABLE_UNTIL[unavailable_key] = (
+                time.time() + UNAVAILABLE_MODEL_RECHECK_SECONDS
+            )
+            logger.warning(
+                f"Request {request_id}: Model service '{model_name}' ({media_type}) is not reachable; "
+                f"skipping it for {UNAVAILABLE_MODEL_RECHECK_SECONDS}s."
+            )
+            return {
+                "error": f"Model service '{model_name}' is not running.",
+                "unavailable": True,
+            }
         except requests.exceptions.Timeout:
             logger.warning(
                 f"Request {request_id}: Timeout querying '{model_name}' ({media_type}) (attempt {attempt+1}/{MAX_RETRIES+1})."
@@ -681,6 +721,28 @@ def query_model_api(
     }
 
 
+def unload_model_api(model_name: str, media_type: str, request_id: str) -> None:
+    """Ask a model service to free its weights right after use.
+
+    Models are queried one after another, so with memory_optimization on only one model is
+    held in RAM at a time instead of all of them. Costs a reload (a few seconds) per request.
+    """
+    predict_url = (
+        ALL_MODEL_CONFIGS.get("media_types", {})
+        .get(media_type, {})
+        .get("model_endpoints", {})
+        .get(model_name)
+    )
+    if not predict_url or not predict_url.endswith("/predict"):
+        return
+    unload_url = predict_url[: -len("/predict")] + "/unload"
+    try:
+        requests.post(unload_url, timeout=30)
+        logger.info(f"Request {request_id}: Unloaded '{model_name}' to free memory.")
+    except requests.exceptions.RequestException as e:
+        logger.warning(f"Request {request_id}: Could not unload '{model_name}': {e}")
+
+
 def calculate_ensemble_verdict_api(
     results: Dict[str, Dict],
     threshold: float,
@@ -719,7 +781,25 @@ def calculate_ensemble_verdict_api(
         imputer = meta_imputers.get(media_type)
         feature_cols = meta_feature_columns_map.get(media_type)
 
-        if learner and scaler and imputer and feature_cols:
+        answered = (
+            sum(1 for c in feature_cols if c.replace("_prob", "") in valid_results)
+            if feature_cols
+            else 0
+        )
+        coverage = answered / len(feature_cols) if feature_cols else 0.0
+
+        if not (learner and scaler and imputer and feature_cols):
+            logger.warning(
+                f"Request {request_id}: Stacking ensemble for '{media_type}' requested, but artifacts not loaded. Falling back to 'average'."
+            )
+            actual_method_used = "average"
+        elif coverage < MIN_STACKING_COVERAGE:
+            logger.warning(
+                f"Request {request_id}: Only {answered}/{len(feature_cols)} stacking models answered for "
+                f"'{media_type}' (need {MIN_STACKING_COVERAGE:.0%}). Falling back to 'average'."
+            )
+            actual_method_used = "average"
+        else:
             feature_vector_values = []
             for model_col_name_from_training in feature_cols:
                 base_model_name = model_col_name_from_training.replace("_prob", "")
@@ -737,11 +817,6 @@ def calculate_ensemble_verdict_api(
             ensemble_prob_fake_score = float(
                 learner.predict_proba(scaled_features)[0, 1]
             )
-        else:
-            logger.warning(
-                f"Request {request_id}: Stacking ensemble for '{media_type}' requested, but artifacts not loaded. Falling back to 'voting'."
-            )
-            actual_method_used = "voting"
 
     if actual_method_used == "voting":
         if total_valid_models > 0:
@@ -863,12 +938,8 @@ async def health_check_api_endpoint(request: Request):
             not type_specific_status["stacking_ensemble_loaded"]
             and default_ensemble == "stacking"
         ):
-            if type_specific_status["status"] == "healthy":
-                type_specific_status["status"] = "degraded_stacking_unavailable"
-            overall_system_is_healthy = False
-            logger.warning(
-                f"Request {req_id}: Stacking (default method) for '{m_type}' is unavailable. System component for this media type is degraded."
-            )
+            # Not an outage: predictions automatically fall back to voting for this type.
+            type_specific_status["ensemble_fallback"] = "voting"
 
         system_health_report["media_type_details"][m_type] = type_specific_status
 
@@ -1017,6 +1088,8 @@ async def run_prediction(
         model_query_results[model_name] = query_model_api(
             model_name, media_type, encoded_media_content, input_data.threshold, req_id
         )
+        if MEMORY_OPTIMIZATION and "error" not in model_query_results[model_name]:
+            unload_model_api(model_name, media_type, req_id)
 
     if not any("error" not in r_data for r_data in model_query_results.values()):
         logger.error(
