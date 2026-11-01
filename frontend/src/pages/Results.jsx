@@ -1,49 +1,38 @@
-import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, FileText, FileSearch, CheckCircle2, AlertCircle, ShieldAlert } from 'lucide-react'
-import { demoResult, sampleAnalyses } from '../data/mockData'
 import ConfidenceScore from '../components/ConfidenceScore'
 import LoadingAnimation from '../components/LoadingAnimation'
 import { verdictTone } from '../components/VerdictBadge'
+import { useAnalysisResult } from '../hooks/useAnalysisResult'
 
 const toneIcon = { ok: CheckCircle2, warn: AlertCircle, bad: ShieldAlert }
 
-const readUpload = () => {
-  try {
-    return JSON.parse(sessionStorage.getItem('truthlens_upload') || 'null')
-  } catch {
-    return null
-  }
-}
-
 export default function Results() {
   const { id } = useParams()
-  const [loading, setLoading] = useState(id === 'new')
-
-  useEffect(() => {
-    if (!loading) return
-    const timer = setTimeout(() => setLoading(false), 1800)
-    return () => clearTimeout(timer)
-  }, [loading])
+  const { result, loading, error } = useAnalysisResult(id)
 
   if (loading) {
     return (
       <div className="results-page">
-        <div className="card"><LoadingAnimation /></div>
+        <div className="card"><LoadingAnimation label="Loading result" hint="" /></div>
       </div>
     )
   }
 
-  const upload = id === 'new' ? readUpload() : null
-  const prior = sampleAnalyses.find((x) => x.id === id)
-
-  const result = {
-    ...demoResult,
-    ...(prior || {}),
-    ...(upload ? { name: upload.name, type: upload.type, id: 'TL-DEMO' } : {}),
+  if (error) {
+    return (
+      <div className="results-page">
+        <div className="result-back">
+          <Link to="/history" className="text-link">
+            <ArrowLeft size={15} /> History
+          </Link>
+        </div>
+        <div className="card empty-state" role="alert">{error}</div>
+      </div>
+    )
   }
-  const verdict = result.verdict || demoResult.verdict
-  const tone = verdictTone(verdict)
+
+  const tone = verdictTone(result.verdict)
   const VerdictIcon = toneIcon[tone]
 
   return (
@@ -52,14 +41,14 @@ export default function Results() {
         <Link to="/history" className="text-link">
           <ArrowLeft size={15} /> History
         </Link>
-        <span className="pill">Demo result</span>
+        <span className="pill">{result.ref}</span>
       </div>
 
       <div className="dashboard-heading result-heading">
         <div>
           <h1 className="heading-lg">Assessment</h1>
           <p className="body-copy">
-            {result.name} · {result.type} · {result.date || 'Just now'}
+            {result.name} · {result.type} · {result.date}
           </p>
         </div>
         <Link to={`/report/${result.id}`} className="btn btn-outline">
@@ -71,28 +60,29 @@ export default function Results() {
         <div className="result-verdict">
           <span className={`result-check ${tone}`}><VerdictIcon size={23} /></span>
           <div>
-            <h2>{verdict}</h2>
-            <p>{result.summary || demoResult.summary}</p>
+            <h2>{result.verdict}</h2>
+            <p>{result.summary}</p>
           </div>
         </div>
         <div className="result-confidence">
-          <ConfidenceScore score={result.confidence || demoResult.confidence} />
+          <ConfidenceScore score={result.confidence} />
         </div>
       </section>
 
       <div className="content-heading">
         <h2>Model observations</h2>
       </div>
+      <p className="small-disclaimer">Each score is that model’s estimated likelihood that the media is AI-generated or manipulated.</p>
       <div className="model-list card">
-        {demoResult.models.map((m) => (
-          <div className="model-row" key={m.name}>
+        {result.models.map((m) => (
+          <div className="model-row" key={m.key}>
             <div className="model-info">
               <strong>{m.name}</strong>
               <small>{m.result}</small>
             </div>
             <div className="model-meter">
-              <div className="meter-track"><span style={{ width: `${m.score}%` }} /></div>
-              <b>{m.score}%</b>
+              <div className="meter-track"><span style={{ width: `${m.score ?? 0}%` }} /></div>
+              <b>{m.score === null ? '—' : `${m.score}%`}</b>
             </div>
           </div>
         ))}
@@ -102,7 +92,7 @@ export default function Results() {
         <h2>Evidence</h2>
       </div>
       <div className="evidence-list card">
-        {demoResult.evidence.map((e) => (
+        {result.evidence.map((e) => (
           <div key={e}>
             <FileSearch size={17} />
             <span>{e}</span>
@@ -112,7 +102,7 @@ export default function Results() {
 
       <div className="result-warning">
         <AlertCircle size={17} />
-        <p>Sample data, not a real analysis. A backend is needed for genuine model results.</p>
+        <p>Automated detection can produce false positives and negatives. Use this result to support human review, together with the source and context of the media.</p>
       </div>
     </div>
   )

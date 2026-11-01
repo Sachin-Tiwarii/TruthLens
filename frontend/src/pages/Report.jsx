@@ -1,10 +1,33 @@
 import { Link, useParams } from 'react-router-dom'
 import { ArrowLeft, Printer, ScanEye, FileText } from 'lucide-react'
-import { demoResult } from '../data/mockData'
 import ConfidenceScore from '../components/ConfidenceScore'
+import LoadingAnimation from '../components/LoadingAnimation'
+import { useAnalysisResult } from '../hooks/useAnalysisResult'
 
 export default function Report() {
   const { id } = useParams()
+  const { result, loading, error } = useAnalysisResult(id)
+
+  if (loading) {
+    return (
+      <div className="report-page">
+        <div className="card"><LoadingAnimation label="Loading report" hint="" /></div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="report-page">
+        <div className="report-toolbar">
+          <Link to="/history" className="text-link">
+            <ArrowLeft size={15} /> History
+          </Link>
+        </div>
+        <div className="card empty-state" role="alert">{error}</div>
+      </div>
+    )
+  }
 
   return (
     <div className="report-page">
@@ -28,39 +51,39 @@ export default function Report() {
 
         <div className="report-title">
           <h1 className="heading-lg">Verification summary</h1>
-          <p className="body-copy">Ref {id} · October 31, 2026</p>
+          <p className="body-copy">Ref {result.ref} · {result.longDate}</p>
         </div>
 
         <div className="report-file">
           <FileText size={20} />
           <div>
-            <strong>{demoResult.name}</strong>
-            <small>{demoResult.type}</small>
+            <strong>{result.name}</strong>
+            <small>{result.type}</small>
           </div>
         </div>
 
         <div className="report-verdict">
           <div>
-            <h2>{demoResult.verdict}</h2>
-            <p>{demoResult.summary}</p>
+            <h2>{result.verdict}</h2>
+            <p>{result.summary}</p>
           </div>
           <div className="report-score">
-            <ConfidenceScore score={demoResult.confidence} />
+            <ConfidenceScore score={result.confidence} />
           </div>
         </div>
 
         <h3 className="report-section-title">Model observations</h3>
-        {demoResult.models.map((m) => (
-          <div className="report-model" key={m.name}>
+        {result.models.map((m) => (
+          <div className="report-model" key={m.key}>
             <span>{m.name}</span>
             <strong>{m.result}</strong>
-            <b>{m.score}%</b>
+            <b>{m.score === null ? '—' : `${m.score}%`}</b>
           </div>
         ))}
 
         <h3 className="report-section-title">Evidence</h3>
         <ul className="report-evidence">
-          {demoResult.evidence.map((x) => (
+          {result.evidence.map((x) => (
             <li key={x}>{x}</li>
           ))}
         </ul>
@@ -68,7 +91,7 @@ export default function Report() {
         <div className="report-caveat">
           <strong>Limitations</strong>
           <p>
-            Sample preview, not a real scan. Automated detection can give false positives and negatives, so review results with source context.
+            Model scores are each detector’s estimated likelihood that the media is AI-generated or manipulated. Automated detection can give false positives and negatives, so review results with source context.
           </p>
         </div>
       </article>

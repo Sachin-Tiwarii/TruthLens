@@ -1,47 +1,73 @@
 import { Link } from 'react-router-dom'
 import { ArrowUpRight, FileCheck2, CalendarDays, ShieldAlert, Gauge, Image, AudioLines, Video } from 'lucide-react'
-import { sampleAnalyses } from '../data/mockData'
-import { useAuth } from '../context/AuthContext'
+import { useMemo } from 'react'
+import { useAuthStore } from '../store/authStore'
 import VerdictBadge from '../components/VerdictBadge'
+import LoadingAnimation from '../components/LoadingAnimation'
+import { useAnalysisHistory } from '../hooks/useAnalysisHistory'
 
 const iconMap = { Image, Audio: AudioLines, Video }
 
-const stats = [
-  { label: 'Total analyses', value: '24', icon: FileCheck2 },
-  { label: 'This month', value: '8', icon: CalendarDays },
-  { label: 'Flagged', value: '8', icon: ShieldAlert },
-  { label: 'Avg. confidence', value: '82%', icon: Gauge },
+const BREAKDOWN = [
+  { verdict: 'real', label: 'Likely authentic', color: 'var(--ok)' },
+  { verdict: 'fake', label: 'Potentially synthetic', color: 'var(--bad)' },
+  { verdict: 'undetermined', label: 'Inconclusive', color: '#94A3B8' },
 ]
 
-const activity = [
-  { label: 'May', value: 3 },
-  { label: 'Jun', value: 4 },
-  { label: 'Jul', value: 2 },
-  { label: 'Aug', value: 3 },
-  { label: 'Sep', value: 4 },
-  { label: 'Oct', value: 8 },
-]
+const monthKey = (date) => `${date.getFullYear()}-${date.getMonth()}`
 
-const breakdown = [
-  { label: 'Likely authentic', value: 14, color: 'var(--ok)' },
-  { label: 'Synthetic', value: 5, color: 'var(--bad)' },
-  { label: 'Manipulated', value: 3, color: 'var(--warn)' },
-  { label: 'Inconclusive', value: 2, color: '#94A3B8' },
-]
+function summarize(records) {
+  const now = new Date()
+  const thisMonth = monthKey(now)
+  const total = records.length
+  const avgConfidence = total
+    ? Math.round(records.reduce((sum, r) => sum + r.confidence, 0) / total)
+    : null
+
+  const stats = [
+    { label: 'Total analyses', value: String(total), icon: FileCheck2 },
+    {
+      label: 'This month',
+      value: String(records.filter((r) => monthKey(new Date(r.timestamp)) === thisMonth).length),
+      icon: CalendarDays,
+    },
+    { label: 'Flagged', value: String(records.filter((r) => r.rawVerdict === 'fake').length), icon: ShieldAlert },
+    { label: 'Avg. confidence', value: avgConfidence === null ? '—' : `${avgConfidence}%`, icon: Gauge },
+  ]
+
+  const activity = Array.from({ length: 6 }, (_, i) => {
+    const date = new Date(now.getFullYear(), now.getMonth() - 5 + i, 1)
+    const key = monthKey(date)
+    return {
+      label: date.toLocaleDateString(undefined, { month: 'short' }),
+      value: records.filter((r) => monthKey(new Date(r.timestamp)) === key).length,
+    }
+  })
+
+  const breakdown = BREAKDOWN.map((b) => ({
+    ...b,
+    value: records.filter((r) => r.rawVerdict === b.verdict).length,
+  }))
+
+  return { stats, activity, breakdown, total }
+}
 
 export default function Dashboard() {
-  const { user } = useAuth()
+  const user = useAuthStore((s) => s.user)
+  const { records, loading, error } = useAnalysisHistory()
+  const { stats, activity, breakdown, total } = useMemo(() => summarize(records), [records])
 
-  const maxActivity = Math.max(...activity.map((a) => a.value))
-  const total = breakdown.reduce((sum, b) => sum + b.value, 0)
+  const maxActivity = Math.max(1, ...activity.map((a) => a.value))
   let acc = 0
-  const stops = breakdown
-    .map((b) => {
-      const start = acc
-      acc += (b.value / total) * 100
-      return `${b.color} ${start}% ${acc}%`
-    })
-    .join(', ')
+  const stops = total
+    ? breakdown
+        .map((b) => {
+          const start = acc
+          acc += (b.value / total) * 100
+          return `${b.color} ${start}% ${acc}%`
+        })
+        .join(', ')
+    : 'var(--line) 0% 100%'
 
   return (
     <div className="dashboard-page">
@@ -52,6 +78,13 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {error && (
+        <div className="result-warning" role="alert">
+          <ShieldAlert size={17} />
+          <p>{error}</p>
+        </div>
+      )}
+
       <div className="stats-grid">
         {stats.map(({ label, value, icon: Icon }) => (
           <article className="stat-card" key={label}>
@@ -59,7 +92,7 @@ export default function Dashboard() {
               <span>{label}</span>
               <Icon size={17} />
             </div>
-            <strong>{value}</strong>
+            <strong>{loading ? '…' : value}</strong>
           </article>
         ))}
       </div>
@@ -125,27 +158,35 @@ export default function Dashboard() {
         <div className="analysis-table table-head">
           <span>File</span><span>Type</span><span>Date</span><span>Assessment</span><span>Confidence</span><span />
         </div>
-        {sampleAnalyses.slice(0, 3).map((item) => {
-          const Icon = iconMap[item.type] || Image
-          return (
-            <div className="analysis-table" key={item.id}>
-              <div className="file-cell">
-                <span className="file-icon"><Icon size={17} /></span>
-                <div>
-                  <strong>{item.name}</strong>
-                  <small>{item.id}</small>
+        {loading ? (
+          <LoadingAnimation label="Loading analyses" hint="" />
+        ) : records.length === 0 ? (
+          <div className="empty-state">
+            No analyses yet. <Link to="/analyze" className="text-link">Analyze your first file</Link>
+          </div>
+        ) : (
+          records.slice(0, 3).map((item) => {
+            const Icon = iconMap[item.type] || Image
+            return (
+              <div className="analysis-table" key={item.id}>
+                <div className="file-cell">
+                  <span className="file-icon"><Icon size={17} /></span>
+                  <div>
+                    <strong>{item.name}</strong>
+                    <small>{item.ref}</small>
+                  </div>
                 </div>
+                <span>{item.type}</span>
+                <span>{item.date}</span>
+                <VerdictBadge verdict={item.verdict} />
+                <span className="conf-cell">{item.confidence}%</span>
+                <Link to={`/results/${item.id}`} className="table-action" aria-label={`View result for ${item.name}`}>
+                  <ArrowUpRight size={17} />
+                </Link>
               </div>
-              <span>{item.type}</span>
-              <span>{item.date}</span>
-              <VerdictBadge verdict={item.verdict} />
-              <span className="conf-cell">{item.confidence}%</span>
-              <Link to={`/results/${item.id}`} className="table-action" aria-label={`View result for ${item.name}`}>
-                <ArrowUpRight size={17} />
-              </Link>
-            </div>
-          )
-        })}
+            )
+          })
+        )}
       </div>
     </div>
   )

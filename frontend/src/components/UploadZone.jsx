@@ -9,9 +9,9 @@ const formatSize = (bytes) =>
     ? `${(bytes / 1024).toFixed(1)} KB`
     : `${(bytes / 1024 / 1024).toFixed(2)} MB`
 
-export default function UploadZone({ onFile, onError, maxSizeMB = 100 }) {
+export default function UploadZone({ value = null, onFile, onError, maxSizeMB = 100 }) {
   const inputRef = useRef(null)
-  const [file, setFile] = useState(null)
+  const [file, setFile] = useState(value)
   const [dragging, setDragging] = useState(false)
 
   const choose = (next) => {

@@ -1,8 +1,9 @@
 import { Link } from 'react-router-dom'
 import { ArrowUpRight, Search, Image, AudioLines, Video } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { sampleAnalyses } from '../data/mockData'
 import VerdictBadge from '../components/VerdictBadge'
+import LoadingAnimation from '../components/LoadingAnimation'
+import { useAnalysisHistory } from '../hooks/useAnalysisHistory'
 
 const icons = { Image, Audio: AudioLines, Video }
 const filters = ['All', 'Image', 'Audio', 'Video']
@@ -10,16 +11,21 @@ const filters = ['All', 'Image', 'Audio', 'Video']
 export default function History() {
   const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('All')
+  const { records, loading, error } = useAnalysisHistory()
 
   const rows = useMemo(
     () =>
-      sampleAnalyses.filter(
+      records.filter(
         (x) =>
           (filter === 'All' || x.type === filter) &&
           x.name.toLowerCase().includes(query.toLowerCase())
       ),
-    [query, filter]
+    [records, query, filter]
   )
+
+  const emptyMessage = records.length
+    ? 'No matching analyses.'
+    : 'No analyses yet. Run your first one from the Analyze page.'
 
   return (
     <div className="history-page">
@@ -58,7 +64,11 @@ export default function History() {
         <div className="analysis-table table-head">
           <span>File</span><span>Type</span><span>Date</span><span>Assessment</span><span>Confidence</span><span />
         </div>
-        {rows.length ? (
+        {loading ? (
+          <LoadingAnimation label="Loading history" hint="" />
+        ) : error ? (
+          <div className="empty-state" role="alert">{error}</div>
+        ) : rows.length ? (
           rows.map((item) => {
             const Icon = icons[item.type] || Image
             return (
@@ -67,7 +77,7 @@ export default function History() {
                   <span className="file-icon"><Icon size={17} /></span>
                   <div>
                     <strong>{item.name}</strong>
-                    <small>{item.id}</small>
+                    <small>{item.ref}</small>
                   </div>
                 </div>
                 <span>{item.type}</span>
@@ -81,7 +91,7 @@ export default function History() {
             )
           })
         ) : (
-          <div className="empty-state">No matching analyses.</div>
+          <div className="empty-state">{emptyMessage}</div>
         )}
       </div>
     </div>
