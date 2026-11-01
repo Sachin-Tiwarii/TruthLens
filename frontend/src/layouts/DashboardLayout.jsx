@@ -1,7 +1,8 @@
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom'
+import { Outlet, Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { Plus, ScanEye, LogOut } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
-import { useAuth } from '../context/AuthContext'
+import LoadingAnimation from '../components/LoadingAnimation'
+import { useAuthStore } from '../store/authStore'
 
 const getTitle = (path) => {
   if (path.startsWith('/dashboard')) return 'Dashboard'
@@ -14,13 +15,18 @@ const getTitle = (path) => {
 
 export default function DashboardLayout() {
   const { pathname } = useLocation()
-  const { logout } = useAuth()
+  const user = useAuthStore((s) => s.user)
+  const authReady = useAuthStore((s) => s.status === 'ready')
+  const logout = useAuthStore((s) => s.logout)
   const navigate = useNavigate()
 
   const handleLogout = () => {
     logout()
     navigate('/login')
   }
+
+  if (!authReady) return <LoadingAnimation label="Loading your workspace" hint="" />
+  if (!user) return <Navigate to="/login" replace state={{ from: pathname }} />
 
   return (
     <div className="workspace">

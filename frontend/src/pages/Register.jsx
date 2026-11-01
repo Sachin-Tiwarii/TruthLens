@@ -1,19 +1,29 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { ScanEye, ArrowRight } from 'lucide-react'
-import { useAuth } from '../context/AuthContext'
+import { ScanEye, ArrowRight, AlertCircle } from 'lucide-react'
+import { useAuthStore } from '../store/authStore'
+import { getErrorMessage } from '../services/api'
 import { useState } from 'react'
 
 export default function Register() {
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const { login } = useAuth()
+  const [error, setError] = useState('')
+  const [submitting, setSubmitting] = useState(false)
+  const register = useAuthStore((s) => s.register)
   const navigate = useNavigate()
 
-  const submit = (e) => {
+  const submit = async (e) => {
     e.preventDefault()
-    login(email)
-    navigate('/dashboard')
+    setError('')
+    setSubmitting(true)
+    try {
+      await register({ name, email, password })
+      navigate('/dashboard', { replace: true })
+    } catch (err) {
+      setError(getErrorMessage(err, 'Unable to create your account. Please try again.'))
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -69,15 +79,21 @@ export default function Register() {
             />
           </div>
 
-          <button className="btn auth-submit" type="submit">
-            Create account <ArrowRight size={16} />
+          {error && (
+            <div className="analyze-error auth-error" role="alert">
+              <AlertCircle size={17} />
+              <span>{error}</span>
+            </div>
+          )}
+
+          <button className="btn auth-submit" type="submit" disabled={submitting}>
+            {submitting ? 'Creating account…' : <>Create account <ArrowRight size={16} /></>}
           </button>
         </form>
 
         <p className="auth-switch">
           Already registered? <Link to="/login">Sign in</Link>
         </p>
-        <p className="auth-note">Demo mode: accounts are local-only until a backend is connected.</p>
       </div>
     </div>
   )

@@ -2,16 +2,17 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import App from './App'
-import { AuthProvider } from './context/AuthContext'
+import { useAuthStore } from './store/authStore'
 import './styles/index.css'
 import './styles/components.css'
+
+// Verify any token saved from a previous visit before protected pages render.
+useAuthStore.getState().checkSession()
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
+      <App />
     </BrowserRouter>
   </React.StrictMode>,
 )

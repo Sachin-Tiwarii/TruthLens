@@ -1,14 +1,29 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { ScanEye, ArrowUpRight, LogIn } from 'lucide-react'
-import { useAuth } from '../context/AuthContext'
+import { useState } from 'react'
+import { useAuthStore } from '../store/authStore'
 
 export default function Navbar() {
-  const { login } = useAuth()
+  const user = useAuthStore((s) => s.user)
+  const loginDemo = useAuthStore((s) => s.loginDemo)
   const navigate = useNavigate()
+  const [demoLoading, setDemoLoading] = useState(false)
 
-  const handleDemoLogin = () => {
-    login('demo@truthlens.ai')
-    navigate('/dashboard')
+  const handleDemoLogin = async () => {
+    if (user) {
+      navigate('/dashboard')
+      return
+    }
+    setDemoLoading(true)
+    try {
+      await loginDemo()
+      navigate('/dashboard')
+    } catch {
+      // Send them to the sign-in page, which shows the error and lets them retry.
+      navigate('/login')
+    } finally {
+      setDemoLoading(false)
+    }
   }
 
   return (
@@ -35,23 +50,33 @@ export default function Navbar() {
         {/* Actions */}
         <div className="nav-actions">
 
-          <Link to="/login" className="nav-login">
-            Sign in
-          </Link>
+          {user ? (
+            <Link to="/dashboard" className="btn">
+              Dashboard
+              <ArrowUpRight size={15} />
+            </Link>
+          ) : (
+            <>
+              <Link to="/login" className="nav-login">
+                Sign in
+              </Link>
 
-          <button
-            type="button"
-            className="nav-demo-btn"
-            onClick={handleDemoLogin}
-          >
-            <LogIn size={15} />
-            Demo User
-          </button>
+              <button
+                type="button"
+                className="nav-demo-btn"
+                onClick={handleDemoLogin}
+                disabled={demoLoading}
+              >
+                <LogIn size={15} />
+                {demoLoading ? 'Signing in…' : 'Demo User'}
+              </button>
 
-          <Link to="/register" className="btn">
-            Get started
-            <ArrowUpRight size={15} />
-          </Link>
+              <Link to="/register" className="btn">
+                Get started
+                <ArrowUpRight size={15} />
+              </Link>
+            </>
+          )}
 
         </div>
 

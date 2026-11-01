@@ -2623,3 +2623,5 @@
   .workspace-content { padding: 0; }
   .report-sheet { border: 0; padding: 0; }
 }
+/* Sign-in / register form error */
+.auth-error { margin: 0 0 16px; }

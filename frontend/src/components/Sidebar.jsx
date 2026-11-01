@@ -1,6 +1,6 @@
 import { NavLink, Link, useNavigate } from 'react-router-dom'
 import { ScanEye, LayoutDashboard, ScanSearch, History, Home, Plus, LogOut } from 'lucide-react'
-import { useAuth } from '../context/AuthContext'
+import { useAuthStore } from '../store/authStore'
 
 const links = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
@@ -9,7 +9,8 @@ const links = [
 ]
 
 export default function Sidebar() {
-  const { user, logout } = useAuth()
+  const user = useAuthStore((s) => s.user)
+  const logout = useAuthStore((s) => s.logout)
   const navigate = useNavigate()
 
   const handleLogout = () => {
