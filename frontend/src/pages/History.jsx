@@ -1,80 +1,58 @@
 import { Link } from 'react-router-dom'
 import { ArrowUpRight, Search, Image, AudioLines, Video, FolderSearch } from 'lucide-react'
 import { useMemo, useState } from 'react'
-import { motion } from 'framer-motion'
 import { sampleAnalyses } from '../data/mockData'
 import VerdictBadge from '../components/VerdictBadge'
+import './app.css'
 
-const icons   = { Image, Audio: AudioLines, Video }
+const icons = { Image, Audio: AudioLines, Video }
 const filters = ['All', 'Image', 'Audio', 'Video']
 
 export default function History() {
-  const [query,  setQuery]  = useState('')
+  const [query, setQuery] = useState('')
   const [filter, setFilter] = useState('All')
 
   const rows = useMemo(
-    () => sampleAnalyses.filter(
-      (x) =>
-        (filter === 'All' || x.type === filter) &&
-        x.name.toLowerCase().includes(query.toLowerCase())
-    ),
+    () =>
+      sampleAnalyses.filter(
+        (x) => (filter === 'All' || x.type === filter) && x.name.toLowerCase().includes(query.toLowerCase())
+      ),
     [query, filter]
   )
 
   return (
     <div>
-      <div className="page-header">
-        <h1 className="heading-lg">Case Library</h1>
-        <p className="body-copy">Revisit and export previous verification assessments.</p>
-      </div>
+      <header className="app-head">
+        <h1>Case library</h1>
+        <p>Revisit and export previous verification assessments.</p>
+      </header>
 
-      <div className="history-controls">
-        <div className="search-box">
-          <Search size={15} />
-          <input
-            placeholder="Search by filename…"
-            aria-label="Search files"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
+      <div className="app-controls">
+        <div className="app-search">
+          <Search size={15} aria-hidden="true" />
+          <input placeholder="Search by filename" aria-label="Search files" value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
-        <div className="filter-tabs">
+        <div className="app-tabs" role="group" aria-label="Filter by media type">
           {filters.map((x) => (
-            <button
-              key={x}
-              type="button"
-              className={filter === x ? 'selected' : ''}
-              onClick={() => setFilter(x)}
-            >
+            <button key={x} type="button" aria-pressed={filter === x} className={filter === x ? 'selected' : ''} onClick={() => setFilter(x)}>
               {x}
             </button>
           ))}
         </div>
       </div>
 
-      <div className="table-card card">
-        <div className="analysis-table table-head">
-          <span>File</span>
-          <span>Type</span>
-          <span>Date</span>
-          <span>Assessment</span>
-          <span>Confidence</span>
-          <span />
+      <div className="app-panel app-table-wrap">
+        <div className="app-table app-table-head" aria-hidden="true">
+          <span>File</span><span>Type</span><span>Date</span><span>Assessment</span><span>Confidence</span><span />
         </div>
 
         {rows.length ? (
-          rows.map((item, i) => {
+          rows.map((item) => {
             const Icon = icons[item.type] || Image
             return (
-              <motion.div
-                className="analysis-table"
-                key={item.id}
-                initial={{ opacity: 0, y: 6 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.04, duration: 0.3 }}
-              >
-                <div className="file-cell">
-                  <span className="file-icon"><Icon size={16} /></span>
+              <div className="app-table" key={item.id}>
+                <div className="app-file-cell">
+                  <span className="app-file-icon sm"><Icon size={16} aria-hidden="true" /></span>
                   <div>
                     <strong>{item.name}</strong>
                     <small>{item.id}</small>
@@ -83,22 +61,18 @@ export default function History() {
                 <span>{item.type}</span>
                 <span>{item.date}</span>
                 <VerdictBadge verdict={item.verdict} />
-                <span className="conf-cell">{item.confidence}%</span>
-                <Link
-                  to={`/results/${item.id}`}
-                  className="table-action"
-                  aria-label={`View result for ${item.name}`}
-                >
-                  <ArrowUpRight size={16} />
+                <span className="app-conf">{item.confidence}%</span>
+                <Link to={`/results/${item.id}`} className="app-icon-btn" aria-label={`View result for ${item.name}`}>
+                  <ArrowUpRight size={16} aria-hidden="true" />
                 </Link>
-              </motion.div>
+              </div>
             )
           })
         ) : (
-          <div className="empty-state">
-            <FolderSearch size={32} />
-            <strong style={{ color: 'var(--text)' }}>No matching analyses</strong>
-            <span style={{ fontSize: 13 }}>Try a different search or filter.</span>
+          <div className="app-empty">
+            <FolderSearch size={30} aria-hidden="true" />
+            <strong>No matching analyses</strong>
+            <span>Try a different search or filter.</span>
           </div>
         )}
       </div>

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight, AlertCircle, Image, AudioLines, Video, Lock } from 'lucide-react'
 import UploadZone from '../components/UploadZone'
+import './app.css'
 
 const getType = (file) => {
   if (file.type.startsWith('image/')) return 'Image'
@@ -10,16 +11,22 @@ const getType = (file) => {
 }
 
 const steps = [
-  { n: '01', title: 'Upload', text: 'Submit your media. It is hashed on receipt for chain-of-custody integrity.' },
-  { n: '02', title: 'Analysis', text: 'Multiple forensic models run in parallel against the media.' },
-  { n: '03', title: 'Report', text: 'Receive a verdict with confidence, evidence breakdown, and integrity metadata.' },
+  { n: '01', title: 'Upload', text: 'Your file is hashed on receipt to protect chain of custody.' },
+  { n: '02', title: 'Analysis', text: 'Several forensic models run in parallel against the media.' },
+  { n: '03', title: 'Report', text: 'You get a verdict, a confidence score, the evidence behind it, and integrity metadata.' },
+]
+
+const formats = [
+  { icon: Image, label: 'Images', types: 'JPG, PNG, WEBP' },
+  { icon: AudioLines, label: 'Audio', types: 'MP3, WAV, M4A' },
+  { icon: Video, label: 'Video', types: 'MP4, MOV, WEBM' },
 ]
 
 export default function Analyze() {
-  const [file, setFile]       = useState(null)
+  const [file, setFile] = useState(null)
   const [purpose, setPurpose] = useState('General verification')
-  const [error, setError]     = useState('')
-  const navigate               = useNavigate()
+  const [error, setError] = useState('')
+  const navigate = useNavigate()
 
   const handleSubmit = (e) => {
     e.preventDefault()
@@ -37,35 +44,28 @@ export default function Analyze() {
 
   return (
     <div>
-      <div className="page-header">
-        <h1 className="heading-lg">Analyze Media</h1>
-        <p className="body-copy">Submit an image, audio clip, or video for forensic analysis.</p>
-      </div>
+      <header className="app-head">
+        <h1>Analyze media</h1>
+        <p>Submit an image, audio clip, or video for forensic analysis.</p>
+      </header>
 
-      <form className="analyze-layout" onSubmit={handleSubmit}>
-        <div className="analyze-main card">
-          <div className="analyze-section-heading">
-            <h2>Upload media</h2>
-            <p>Drag and drop or click to browse. Supported: JPG, PNG, WEBP, MP3, WAV, M4A, MP4, MOV, WEBM.</p>
-          </div>
+      <form className="app-analyze" onSubmit={handleSubmit}>
+        <section className="app-panel app-analyze-main">
+          <h2 className="app-h2">Upload media</h2>
+          <p className="app-sub">Drag a file into the box or click to browse.</p>
 
           <UploadZone onFile={setFile} onError={setError} />
 
           {error && (
-            <div className="analyze-error" role="alert">
-              <AlertCircle size={16} />
+            <div className="app-error" role="alert">
+              <AlertCircle size={16} aria-hidden="true" />
               <span>{error}</span>
             </div>
           )}
 
-          <div className="form-field purpose-field">
+          <div className="app-field">
             <label htmlFor="purpose">Analysis purpose</label>
-            <select
-              id="purpose"
-              className="input"
-              value={purpose}
-              onChange={(e) => setPurpose(e.target.value)}
-            >
+            <select id="purpose" className="app-input" value={purpose} onChange={(e) => setPurpose(e.target.value)}>
               <option>General verification</option>
               <option>Check for AI-generated content</option>
               <option>Check for possible manipulation</option>
@@ -73,41 +73,46 @@ export default function Analyze() {
             </select>
           </div>
 
-          <div className="analyze-submit-row">
-            <div className="upload-security">
-              <Lock size={13} />
-              <span>Media processed securely — not stored after analysis</span>
-            </div>
-            <button type="submit" className="btn" disabled={!file}>
-              Run analysis <ArrowRight size={16} />
+          <div className="app-submit-row">
+            <p className="app-secure">
+              <Lock size={13} aria-hidden="true" /> Media is processed securely and not stored after analysis.
+            </p>
+            <button type="submit" className="app-btn" disabled={!file}>
+              Run analysis <ArrowRight size={16} aria-hidden="true" />
             </button>
           </div>
-        </div>
+        </section>
 
-        <aside className="analyze-aside">
-          <div className="card analyze-info-card">
-            <h3>What happens next</h3>
-            {steps.map(({ n, title, text }) => (
-              <div className="analysis-step" key={n}>
-                <span className="step-num-badge">{n}</span>
-                <div>
-                  <strong>{title}</strong>
-                  <p>{text}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+        <aside className="app-analyze-aside">
+          <section className="app-panel">
+            <h2 className="app-h2">What happens next</h2>
+            <ol className="app-steps">
+              {steps.map(({ n, title, text }) => (
+                <li key={n}>
+                  <span className="app-step-n">{n}</span>
+                  <div>
+                    <strong>{title}</strong>
+                    <p>{text}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </section>
 
-          <div className="supported-formats">
-            <strong>Supported formats</strong>
-            <div>
-              <span><Image size={14} /> JPG, PNG, WEBP</span>
-              <span><AudioLines size={14} /> MP3, WAV, M4A</span>
-              <span><Video size={14} /> MP4, MOV, WEBM</span>
-            </div>
-          </div>
+          <section className="app-panel app-formats">
+            <h2 className="app-h2">Supported formats</h2>
+            <ul>
+              {formats.map(({ icon: Icon, label, types }) => (
+                <li key={label}>
+                  <Icon size={15} aria-hidden="true" />
+                  <span>{label}</span>
+                  <code>{types}</code>
+                </li>
+              ))}
+            </ul>
+          </section>
 
-          <p className="small-disclaimer">
+          <p className="app-fine">
             Results are probabilistic estimates and should support human review, not replace it.
           </p>
         </aside>

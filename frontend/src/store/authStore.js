@@ -1,91 +1,92 @@
+
 import { create } from 'zustand'
-import { createJSONStorage, persist } from 'zustand/middleware'
-import { configureApiAuth } from '../services/api'
-import { authService } from '../services/authService'
+import { persist } from 'zustand/middleware'
 import { useAnalysisStore } from './analysisStore'
 
-const DEMO_ACCOUNT = { name: 'Demo user', email: 'demo@truthlens.ai', password: 'truthlens-demo' }
-
-const toUser = (profile) => ({
-  name: profile.full_name || profile.username.split('@')[0],
-  email: profile.email || profile.username,
-})
+const DEMO_USER = {
+  name: 'Demo User',
+  email: 'demo@truthlens.ai',
+}
 
 export const useAuthStore = create(
   persist(
-    (set, get) => ({
+    (set) => ({
       token: null,
       user: null,
-      // 'idle' until checkSession runs, 'checking' while a saved token is verified, then 'ready'.
-      status: 'idle',
+      status: 'ready',
 
-      // Sets the token, then loads the profile with it. Throws if the token is rejected.
-      startSession: async (token) => {
-        useAnalysisStore.getState().reset()
-        set({ token })
-        try {
-          const { data } = await authService.me()
-          set({ user: toUser(data), status: 'ready' })
-        } catch (err) {
-          set({ token: null, user: null })
-          throw err
-        }
-      },
-
+      // Local demo login: no backend request.
       login: async (email, password) => {
-        const { data } = await authService.login(email, password)
-        await get().startSession(data.access_token)
-      },
-
-      register: async ({ name, email, password }) => {
-        const { data } = await authService.register({ name, email, password })
-        await get().startSession(data.access_token)
-      },
-
-      // Shared demo account: signs in, creating the account on first use.
-      loginDemo: async () => {
-        try {
-          await get().login(DEMO_ACCOUNT.email, DEMO_ACCOUNT.password)
-        } catch (err) {
-          if (err.response?.status !== 401) throw err
-          await get().register(DEMO_ACCOUNT)
+        if (!email || !password) {
+          throw new Error('Please enter your email and password.')
         }
+
+        useAnalysisStore.getState().reset()
+
+        set({
+          token: 'local-demo-token',
+          user: {
+            name: email.split('@')[0],
+            email,
+          },
+          status: 'ready',
+        })
+      },
+
+      // One-click demo access.
+      loginDemo: async () => {
+        useAnalysisStore.getState().reset()
+
+        set({
+          token: 'local-demo-token',
+          user: DEMO_USER,
+          status: 'ready',
+        })
+      },
+
+      // Local registration for UI testing.
+      register: async ({ name, email, password }) => {
+        if (!name || !email || !password) {
+          throw new Error('Please complete all fields.')
+        }
+
+        useAnalysisStore.getState().reset()
+
+        set({
+          token: 'local-demo-token',
+          user: { name, email },
+          status: 'ready',
+        })
       },
 
       logout: () => {
-        set({ token: null, user: null })
+        set({
+          token: null,
+          user: null,
+          status: 'ready',
+        })
+
         useAnalysisStore.getState().reset()
       },
 
-      // Verifies a token saved from a previous visit. Run once on app start.
       checkSession: async () => {
-        const { token, status } = get()
-        if (status !== 'idle') return
-        if (!token) {
-          set({ status: 'ready' })
-          return
-        }
-        set({ status: 'checking' })
-        try {
-          const { data } = await authService.me()
-          set({ user: toUser(data) })
-        } catch (err) {
-          // Drop the session if the server rejected it; keep it if the server is just unreachable.
-          if (err.response?.status === 401) get().logout()
-        } finally {
-          set({ status: 'ready' })
-        }
+        set({ status: 'ready' })
+      },
+
+      startSession: async () => {
+        set({
+          token: 'local-demo-token',
+          user: DEMO_USER,
+          status: 'ready',
+        })
       },
     }),
     {
       name: 'truthlens_auth',
-      storage: createJSONStorage(() => localStorage),
-      partialize: (state) => ({ token: state.token, user: state.user }),
+      partialize: (state) => ({
+        token: state.token,
+        user: state.user,
+      }),
     }
   )
 )
-
-configureApiAuth({
-  getToken: () => useAuthStore.getState().token,
-  onUnauthorized: () => useAuthStore.getState().logout(),
-})

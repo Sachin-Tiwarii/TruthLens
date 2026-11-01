@@ -1,17 +1,15 @@
 import { useRef, useState } from 'react'
 import { UploadCloud, FileImage, FileAudio, FileVideo, X } from 'lucide-react'
 
-const ACCEPT  = '.png,.jpg,.jpeg,.webp,.mp3,.wav,.m4a,.mp4,.mov,.webm'
+const ACCEPT = '.png,.jpg,.jpeg,.webp,.mp3,.wav,.m4a,.mp4,.mov,.webm'
 const ALLOWED = /\.(png|jpe?g|webp|mp3|wav|m4a|mp4|mov|webm)$/i
 
 const formatSize = (bytes) =>
-  bytes < 1024 * 1024
-    ? `${(bytes / 1024).toFixed(1)} KB`
-    : `${(bytes / 1024 / 1024).toFixed(2)} MB`
+  bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${(bytes / 1024 / 1024).toFixed(2)} MB`
 
 export default function UploadZone({ value = null, onFile, onError, maxSizeMB = 100 }) {
   const inputRef = useRef(null)
-  const [file,     setFile]     = useState(value)
+  const [file, setFile] = useState(value)
   const [dragging, setDragging] = useState(false)
 
   const choose = (next) => {
@@ -21,7 +19,7 @@ export default function UploadZone({ value = null, onFile, onError, maxSizeMB = 
       return
     }
     if (next.size > maxSizeMB * 1024 * 1024) {
-      onError?.(`File exceeds ${maxSizeMB} MB limit. Please choose a smaller file.`)
+      onError?.(`File exceeds the ${maxSizeMB} MB limit. Please choose a smaller file.`)
       return
     }
     onError?.('')
@@ -36,28 +34,29 @@ export default function UploadZone({ value = null, onFile, onError, maxSizeMB = 
     if (inputRef.current) inputRef.current.value = ''
   }
 
-  const FileIcon = !file
-    ? UploadCloud
-    : file.type.startsWith('image/') ? FileImage
-    : file.type.startsWith('audio/') ? FileAudio
-    : FileVideo
+  const dropProps = {
+    onDragOver: (e) => { e.preventDefault(); setDragging(true) },
+    onDragLeave: () => setDragging(false),
+    onDrop: (e) => { e.preventDefault(); setDragging(false); choose(e.dataTransfer.files?.[0]) },
+  }
+
+  const input = (
+    <input ref={inputRef} type="file" accept={ACCEPT} hidden onChange={(e) => choose(e.target.files?.[0])} />
+  )
 
   if (file) {
+    const FileIcon = file.type.startsWith('image/') ? FileImage : file.type.startsWith('audio/') ? FileAudio : FileVideo
     return (
-      <div className={`upload-zone ${dragging ? 'dragging' : ''}`}
-        onDragOver={(e)  => { e.preventDefault(); setDragging(true) }}
-        onDragLeave={()  => setDragging(false)}
-        onDrop={(e)      => { e.preventDefault(); setDragging(false); choose(e.dataTransfer.files?.[0]) }}
-      >
-        <input ref={inputRef} type="file" accept={ACCEPT} hidden onChange={(e) => choose(e.target.files?.[0])} />
-        <div className="selected-file">
-          <div className="selected-file-icon"><FileIcon size={20} /></div>
-          <div className="selected-file-info">
+      <div className={`app-drop has-file${dragging ? ' dragging' : ''}`} {...dropProps}>
+        {input}
+        <div className="app-file">
+          <span className="app-file-icon"><FileIcon size={20} aria-hidden="true" /></span>
+          <div className="app-file-info">
             <strong>{file.name}</strong>
             <span>{formatSize(file.size)} · Ready for analysis</span>
           </div>
-          <button className="remove-file" type="button" onClick={clear} aria-label="Remove file">
-            <X size={15} />
+          <button className="app-icon-btn" type="button" onClick={clear} aria-label="Remove file">
+            <X size={16} aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -66,30 +65,21 @@ export default function UploadZone({ value = null, onFile, onError, maxSizeMB = 
 
   return (
     <div
-      className={`upload-zone ${dragging ? 'dragging' : ''}`}
+      className={`app-drop${dragging ? ' dragging' : ''}`}
       role="button"
       tabIndex={0}
       aria-label="Upload media file"
-      onKeyDown={(e) => e.key === 'Enter' && inputRef.current?.click()}
-      onDragOver={(e)  => { e.preventDefault(); setDragging(true) }}
-      onDragLeave={()  => setDragging(false)}
-      onDrop={(e)      => { e.preventDefault(); setDragging(false); choose(e.dataTransfer.files?.[0]) }}
-      onClick={()      => inputRef.current?.click()}
+      onClick={() => inputRef.current?.click()}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inputRef.current?.click() }
+      }}
+      {...dropProps}
     >
-      <input
-        ref={inputRef}
-        type="file"
-        accept={ACCEPT}
-        hidden
-        onChange={(e) => choose(e.target.files?.[0])}
-      />
-
-      <div className="upload-icon">
-        <UploadCloud size={24} />
-      </div>
+      {input}
+      <span className="app-drop-icon"><UploadCloud size={24} aria-hidden="true" /></span>
       <strong>Drop media here</strong>
       <span>or click to browse</span>
-      <small>Image, audio or video · up to {maxSizeMB} MB</small>
+      <small>Image, audio, or video, up to {maxSizeMB} MB</small>
     </div>
   )
 }

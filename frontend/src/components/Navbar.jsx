@@ -1,76 +1,87 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { ScanEye, ArrowRight, LogIn, Menu, X } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import './chrome.css'
 
 export default function Navbar() {
   const loginDemo = useAuthStore((s) => s.loginDemo)
-  const navigate  = useNavigate()
-  const location  = useLocation()
+  const navigate = useNavigate()
+  const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const handleDemoLogin = async () => {
     try {
       await loginDemo()
-      navigate('/dashboard')
     } catch {
-      navigate('/dashboard') // fallback for demo
+      /* demo fallback: continue to the dashboard anyway */
     }
     setMobileOpen(false)
+    navigate('/dashboard')
   }
 
-  const isActive = (path) => location.pathname === path ? 'active' : ''
+  const isActive = (path) => location.pathname === path
+  const linkProps = (path) => ({
+    className: `tl-link${isActive(path) ? ' is-active' : ''}`,
+    'aria-current': isActive(path) ? 'page' : undefined,
+  })
+
+  // Close the drawer on route change and on Escape
+  useEffect(() => { setMobileOpen(false) }, [location.pathname])
+  useEffect(() => {
+    if (!mobileOpen) return
+    const onKey = (e) => e.key === 'Escape' && setMobileOpen(false)
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [mobileOpen])
 
   return (
-    <header className="site-header">
-      <div className="container nav-inner">
-
-        {/* Brand */}
-        <Link to="/" className="brand">
-          <span className="brand-mark"><ScanEye size={17} /></span>
-          <span className="brand-name">Truth<span>Lens</span></span>
+    <header className="tl-header">
+      <div className="tl-container tl-nav">
+        <Link to="/" className="tl-brand" aria-label="TruthLens home">
+          <span className="tl-brand-mark"><ScanEye size={18} aria-hidden="true" /></span>
+          <span className="tl-brand-name">TruthLens</span>
         </Link>
 
-        {/* Desktop nav */}
-        <nav className="nav-links">
-          <Link to="/"      className={isActive('/')}>Home</Link>
-          <Link to="/about" className={isActive('/about')}>About</Link>
+        <nav className="tl-links" aria-label="Primary">
+          <Link to="/" {...linkProps('/')}>Home</Link>
+          <Link to="/about" {...linkProps('/about')}>About</Link>
         </nav>
 
-        {/* Desktop actions */}
-        <div className="nav-actions">
-          <button type="button" className="nav-demo-btn" onClick={handleDemoLogin}>
-            <LogIn size={14} /> Demo
+        <div className="tl-actions">
+          <button type="button" className="tl-demo" onClick={handleDemoLogin}>
+            <LogIn size={14} aria-hidden="true" /> Try demo
           </button>
-          <Link to="/login"    className="nav-login">Sign in</Link>
-          <Link to="/register" className="btn btn-sm">
-            Get started <ArrowRight size={14} />
+          <Link to="/login" className="tl-link">Sign in</Link>
+          <Link to="/register" className="tl-btn">
+            Get started <ArrowRight size={14} aria-hidden="true" />
           </Link>
         </div>
 
-        {/* Mobile toggle */}
         <button
-          className="mobile-menu"
+          className="tl-burger"
           type="button"
           aria-label="Toggle navigation menu"
           aria-expanded={mobileOpen}
+          aria-controls="tl-mobile-nav"
           onClick={() => setMobileOpen((v) => !v)}
         >
           {mobileOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
 
-      {/* Mobile drawer */}
       {mobileOpen && (
-        <div className="container">
-          <nav className="mobile-nav">
-            <Link to="/"         onClick={() => setMobileOpen(false)} className={isActive('/')}>Home</Link>
-            <Link to="/about"    onClick={() => setMobileOpen(false)} className={isActive('/about')}>About</Link>
-            <Link to="/login"    onClick={() => setMobileOpen(false)}>Sign in</Link>
-            <Link to="/register" onClick={() => setMobileOpen(false)}>Get started</Link>
-            <button type="button" onClick={handleDemoLogin}>
-              <LogIn size={15} style={{ marginRight: 6 }} /> Continue as demo
+        <div className="tl-container">
+          <nav id="tl-mobile-nav" className="tl-drawer" aria-label="Mobile">
+            <Link to="/" {...linkProps('/')}>Home</Link>
+            <Link to="/about" {...linkProps('/about')}>About</Link>
+            <Link to="/login" className="tl-link">Sign in</Link>
+            <button type="button" className="tl-link tl-drawer-demo" onClick={handleDemoLogin}>
+              <LogIn size={15} aria-hidden="true" /> Continue as demo
             </button>
+            <Link to="/register" className="tl-btn tl-btn-block">
+              Get started <ArrowRight size={14} aria-hidden="true" />
+            </Link>
           </nav>
         </div>
       )}

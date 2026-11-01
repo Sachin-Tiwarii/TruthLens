@@ -1,60 +1,33 @@
-import { motion } from 'framer-motion'
-import { LoaderCircle, ScanLine } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Check, Loader2 } from 'lucide-react'
 
 const stages = [
-  'Ingesting media…',
-  'Extracting features…',
-  'Running model analysis…',
-  'Fusing evidence…',
-  'Generating report…',
+  'Hashing the file for chain of custody',
+  'Running forensic models in parallel',
+  'Fusing results and building your report',
 ]
 
-export default function LoadingAnimation({
-  label = 'Analyzing media',
-  hint  = 'This usually takes a few seconds.',
-}) {
+export default function LoadingAnimation() {
+  const [active, setActive] = useState(0)
+
+  useEffect(() => {
+    const a = setTimeout(() => setActive(1), 700)
+    const b = setTimeout(() => setActive(2), 1450)
+    return () => { clearTimeout(a); clearTimeout(b) }
+  }, [])
+
   return (
-    <div className="loading-state" role="status" aria-live="polite">
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 1.4, repeat: Infinity, ease: 'linear' }}
-      >
-        <LoaderCircle size={30} />
-      </motion.div>
-
-      <strong>{label}</strong>
-
-      {hint && (
-        <span style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-          {hint}
-        </span>
-      )}
-
-      {/* Pipeline stages */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 8, alignItems: 'center' }}>
-        {stages.map((stage, i) => (
-          <motion.div
-            key={stage}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 6,
-              color: 'var(--muted)', fontSize: 12,
-              fontFamily: 'var(--font-mono)',
-            }}
-            initial={{ opacity: 0, x: -6 }}
-            animate={{ opacity: [0, 1, 0.4] }}
-            transition={{
-              delay: i * 0.45,
-              duration: 0.9,
-              repeat: Infinity,
-              repeatDelay: stages.length * 0.45 - 0.9,
-              ease: 'easeInOut',
-            }}
-          >
-            <ScanLine size={11} />
-            {stage}
-          </motion.div>
+    <div className="app-loading" role="status" aria-live="polite">
+      <div className="app-scan" aria-hidden="true"><i /></div>
+      <h2>Analyzing your file</h2>
+      <ul>
+        {stages.map((s, i) => (
+          <li key={s} className={i < active ? 'done' : i === active ? 'now' : ''}>
+            {i < active ? <Check size={15} aria-hidden="true" /> : i === active ? <Loader2 size={15} className="app-spin" aria-hidden="true" /> : <span className="app-dot" />}
+            {s}
+          </li>
         ))}
-      </div>
+      </ul>
     </div>
   )
 }

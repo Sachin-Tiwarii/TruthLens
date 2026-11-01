@@ -1,16 +1,17 @@
 import { NavLink, Link, useNavigate } from 'react-router-dom'
 import { ScanEye, LayoutDashboard, ScanSearch, History, Home, Plus, LogOut } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
+import '../pages/app.css'
 
 const navLinks = [
   { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { name: 'Analyze',   path: '/analyze',   icon: ScanSearch },
-  { name: 'History',   path: '/history',   icon: History },
+  { name: 'Analyze', path: '/analyze', icon: ScanSearch },
+  { name: 'History', path: '/history', icon: History },
 ]
 
 export default function Sidebar() {
-  const user     = useAuthStore((s) => s.user)
-  const logout   = useAuthStore((s) => s.logout)
+  const user = useAuthStore((s) => s.user)
+  const logout = useAuthStore((s) => s.logout)
   const navigate = useNavigate()
 
   const handleLogout = () => {
@@ -18,64 +19,41 @@ export default function Sidebar() {
     navigate('/login')
   }
 
-  const initials = user?.name
-    ? user.name.replace('@', '').slice(0, 2).toUpperCase()
-    : 'TL'
+  const displayName = user?.name?.split('@')[0] || 'Demo user'
+  const initials = user?.name ? user.name.replace('@', '').slice(0, 2).toUpperCase() : 'TL'
 
   return (
-    <aside className="sidebar">
-      {/* Brand */}
-      <Link to="/" className="sidebar-brand">
-        <span className="brand-mark"><ScanEye size={17} /></span>
-        <span className="brand-name" style={{ fontSize: 16, fontWeight: 700, letterSpacing: '-.02em', color: 'var(--ink)' }}>
-          Truth<span style={{ color: 'var(--accent)', fontWeight: 400 }}>Lens</span>
-        </span>
+    <aside className="app-sidebar">
+      <Link to="/" className="app-brand" aria-label="TruthLens home">
+        <span className="app-mark"><ScanEye size={18} aria-hidden="true" /></span>
+        <span className="app-brand-name">TruthLens</span>
       </Link>
 
-      {/* New analysis CTA */}
-      <Link to="/analyze" className="btn btn-sm" style={{ marginBottom: 20, width: '100%', justifyContent: 'flex-start', gap: 8 }}>
-        <Plus size={15} /> New analysis
+      <Link to="/analyze" className="app-btn app-new">
+        <Plus size={15} aria-hidden="true" /> New analysis
       </Link>
 
-      {/* Navigation */}
-      <div className="sidebar-section-label">Workspace</div>
-      <nav aria-label="Workspace navigation">
+      <nav className="app-nav" aria-label="Workspace">
         {navLinks.map(({ name, path, icon: Icon }) => (
-          <NavLink
-            key={path}
-            to={path}
-            className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
-          >
-            <Icon size={17} />
-            {name}
+          <NavLink key={path} to={path} className={({ isActive }) => `app-nav-link${isActive ? ' active' : ''}`}>
+            <Icon size={17} aria-hidden="true" />
+            <span>{name}</span>
           </NavLink>
         ))}
       </nav>
 
-      {/* Bottom */}
-      <div className="sidebar-bottom">
-        <Link to="/" className="sidebar-link">
-          <Home size={17} /> Home
+      <div className="app-side-bottom">
+        <Link to="/" className="app-nav-link">
+          <Home size={17} aria-hidden="true" /> <span>Home</span>
         </Link>
-        <div className="sidebar-user" style={{ marginTop: 8 }}>
-          <div className="sidebar-user-avatar">{initials}</div>
-          <div className="sidebar-user-info">
-            <strong>{user?.name?.split('@')[0] || 'Demo user'}</strong>
+        <div className="app-user">
+          <div className="app-avatar" aria-hidden="true">{initials}</div>
+          <div className="app-user-info">
+            <strong>{displayName}</strong>
             <span>{user?.email || 'demo@truthlens.ai'}</span>
           </div>
-          <button
-            type="button"
-            aria-label="Sign out"
-            onClick={handleLogout}
-            style={{
-              width: 28, height: 28, display: 'grid', placeItems: 'center',
-              borderRadius: 'var(--radius-sm)', color: 'var(--muted)',
-              transition: 'all var(--t-fast)', flexShrink: 0,
-            }}
-            onMouseEnter={(e) => { e.currentTarget.style.background = 'var(--bad-soft)'; e.currentTarget.style.color = 'var(--bad)' }}
-            onMouseLeave={(e) => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'var(--muted)' }}
-          >
-            <LogOut size={15} />
+          <button type="button" className="app-signout" aria-label="Sign out" title="Sign out" onClick={handleLogout}>
+            <LogOut size={15} aria-hidden="true" />
           </button>
         </div>
       </div>
