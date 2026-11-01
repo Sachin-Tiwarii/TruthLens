@@ -1,0 +1,6 @@
+.env
+__pycache__/
+*.pyc
+*.db
+*.egg-info/
+deepsafe_test_results/
