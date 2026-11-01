@@ -1,14 +1,14 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { ScanEye, ArrowRight, AlertCircle } from 'lucide-react'
+import { ScanEye, ArrowRight, AlertCircle, ShieldCheck } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { getErrorMessage } from '../services/api'
 import { useState } from 'react'
 
 export default function Register() {
-  const [name, setName] = useState('')
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError] = useState('')
+  const [name,       setName]       = useState('')
+  const [email,      setEmail]      = useState('')
+  const [password,   setPassword]   = useState('')
+  const [error,      setError]      = useState('')
   const [submitting, setSubmitting] = useState(false)
   const register = useAuthStore((s) => s.register)
   const navigate = useNavigate()
@@ -29,12 +29,14 @@ export default function Register() {
   return (
     <div className="auth-page">
       <div className="auth-card card">
+
         <Link to="/" className="brand auth-brand">
-          <span className="brand-mark"><ScanEye /></span>
-          <span className="brand-name">truth<span>lens</span></span>
+          <span className="brand-mark"><ScanEye size={17} /></span>
+          <span className="brand-name">Truth<span>Lens</span></span>
         </Link>
 
         <h1 className="heading-md">Create account</h1>
+        <p className="auth-subtitle">Start verifying media with forensic precision.</p>
 
         <form onSubmit={submit}>
           <div className="form-field">
@@ -51,7 +53,7 @@ export default function Register() {
           </div>
 
           <div className="form-field">
-            <label htmlFor="reg-email">Email</label>
+            <label htmlFor="reg-email">Email address</label>
             <input
               id="reg-email"
               className="input"
@@ -80,14 +82,14 @@ export default function Register() {
           </div>
 
           {error && (
-            <div className="analyze-error auth-error" role="alert">
-              <AlertCircle size={17} />
+            <div className="analyze-error" role="alert" style={{ marginBottom: 16 }}>
+              <AlertCircle size={15} />
               <span>{error}</span>
             </div>
           )}
 
           <button className="btn auth-submit" type="submit" disabled={submitting}>
-            {submitting ? 'Creating account…' : <>Create account <ArrowRight size={16} /></>}
+            {submitting ? 'Creating account…' : <><ShieldCheck size={15} /> Create account</>}
           </button>
         </form>
 
