@@ -12,7 +12,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import ForensicSpecimen from './ForensicSpecimen.jsx'
-import './Home.css'
+import './home.css'
 
 const capabilities = [
   {

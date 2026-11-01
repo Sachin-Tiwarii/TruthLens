@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ScanEye, Eye, EyeOff, Fingerprint, Layers3, FileCheck2 } from 'lucide-react'
-import '../pages/pages.css'
+import './pages.css'
 
 const points = [
   { icon: Fingerprint, text: 'Every file is SHA-256 hashed on receipt.' },

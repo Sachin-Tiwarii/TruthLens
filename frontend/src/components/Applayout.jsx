@@ -1,6 +1,6 @@
 import { Outlet } from 'react-router-dom'
 import Sidebar from '../components/Sidebar'
-import './app.css'
+import '../pages/app.css'
 
 /* Wraps every signed-in page: sidebar + scrolling content area. */
 export default function AppLayout() {

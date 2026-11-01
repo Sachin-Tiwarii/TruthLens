@@ -3,7 +3,7 @@
   import { useState } from 'react'
   import { useAuthStore } from '../store/authStore'
   import { getErrorMessage } from '../services/api'
-  import AuthLayout, { PasswordField } from './Authlayout.JSX'
+  import AuthLayout, { PasswordField } from './AuthLayout.jsx'
 
   export default function Login() {
     const [email, setEmail] = useState('')
