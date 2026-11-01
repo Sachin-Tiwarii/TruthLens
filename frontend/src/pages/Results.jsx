@@ -1,61 +1,44 @@
-import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, FileText, FileSearch, CheckCircle2, AlertCircle, ShieldAlert, Hash, Clock, Cpu } from 'lucide-react'
+import { ArrowLeft, FileText, FileSearch, CheckCircle2, AlertCircle, ShieldAlert } from 'lucide-react'
 import { motion } from 'framer-motion'
-import { demoResult, sampleAnalyses } from '../data/mockData'
 import LoadingAnimation from '../components/LoadingAnimation'
-import { verdictTone } from '../components/VerdictBadge'
-import VerdictBadge from '../components/VerdictBadge'
+import VerdictBadge, { verdictTone } from '../components/VerdictBadge'
+import { useAnalysisResult } from '../hooks/useAnalysisResult'
 
 const toneIcon = { ok: CheckCircle2, warn: AlertCircle, bad: ShieldAlert }
 
-const readUpload = () => {
-  try { return JSON.parse(sessionStorage.getItem('truthlens_upload') || 'null') } catch { return null }
-}
-
-// Fake integrity data for demo
-const integrity = [
-  { label: 'SHA-256 Hash',      value: 'a3f2d...c4e91 (truncated)' },
-  { label: 'Received at',       value: new Date().toISOString().replace('T', ' ').slice(0, 19) + ' UTC' },
-  { label: 'Image model',       value: 'TruthLens-Vision v0.3.1' },
-  { label: 'Audio model',       value: 'TruthLens-Audio v0.2.4' },
-  { label: 'Fusion engine',     value: 'TruthLens-Fusion v1.0.0' },
-  { label: 'Report version',    value: 'TLR-2026-10-31' },
-]
-
 export default function Results() {
-  const { id }     = useParams()
-  const [loading, setLoading] = useState(id === 'new')
-
-  useEffect(() => {
-    if (!loading) return
-    const t = setTimeout(() => setLoading(false), 2200)
-    return () => clearTimeout(t)
-  }, [loading])
+  const { id } = useParams()
+  const { result, loading, error } = useAnalysisResult(id)
 
   if (loading) {
     return (
       <div className="results-page">
         <div className="card">
-          <LoadingAnimation />
+          <LoadingAnimation label="Loading assessment" hint="" />
         </div>
       </div>
     )
   }
 
-  const upload = id === 'new' ? readUpload() : null
-  const prior  = sampleAnalyses.find((x) => x.id === id)
-
-  const result = {
-    ...demoResult,
-    ...(prior  || {}),
-    ...(upload ? { name: upload.name, type: upload.type, id: 'TL-DEMO' } : {}),
+  if (error) {
+    return (
+      <div className="results-page">
+        <div className="result-back">
+          <Link to="/history" className="text-link">
+            <ArrowLeft size={14} /> History
+          </Link>
+        </div>
+        <div className="card empty-state" role="alert">
+          <AlertCircle size={28} />
+          <strong style={{ color: 'var(--text)' }}>{error}</strong>
+        </div>
+      </div>
+    )
   }
 
-  const verdict    = result.verdict || demoResult.verdict
-  const tone       = verdictTone(verdict)
+  const tone        = verdictTone(result.verdict)
   const VerdictIcon = toneIcon[tone]
-  const confidence  = result.confidence || demoResult.confidence
 
   return (
     <div className="results-page">
@@ -66,7 +49,7 @@ export default function Results() {
           <ArrowLeft size={14} /> History
         </Link>
         <div style={{ display: 'flex', gap: 8 }}>
-          <span className="pill">Demo result</span>
+          <span className="pill">{result.ref}</span>
           <Link to={`/report/${result.id}`} className="btn btn-ghost btn-sm">
             <FileText size={14} /> View report
           </Link>
@@ -78,7 +61,7 @@ export default function Results() {
         <div>
           <h1 className="heading-lg">Assessment</h1>
           <p className="body-copy" style={{ fontSize: 13, marginTop: 4 }}>
-            {result.name} · {result.type} · {result.date || 'Just now'}
+            {result.name} · {result.type} · {result.date}
           </p>
         </div>
       </div>
@@ -95,8 +78,8 @@ export default function Results() {
             <VerdictIcon size={22} />
           </span>
           <div>
-            <h2><VerdictBadge verdict={verdict} /></h2>
-            <p style={{ marginTop: 10 }}>{result.summary || demoResult.summary}</p>
+            <h2><VerdictBadge verdict={result.verdict} /></h2>
+            <p style={{ marginTop: 10 }}>{result.summary}</p>
           </div>
         </div>
 
@@ -105,16 +88,16 @@ export default function Results() {
             <span>Confidence score</span>
           </div>
           <div className="confidence-score">
-            {confidence}<span>%</span>
+            {result.confidence}<span>%</span>
           </div>
           <div className="confidence-track">
             <motion.span
               initial={{ width: 0 }}
-              animate={{ width: `${confidence}%` }}
+              animate={{ width: `${result.confidence}%` }}
               transition={{ duration: 0.9, delay: 0.3, ease: 'easeOut' }}
             />
           </div>
-          <small>Fused across all models — higher score = higher certainty of verdict</small>
+          <small>Combined across the models that ran — higher score = higher certainty of verdict</small>
         </div>
       </motion.section>
 
@@ -122,11 +105,14 @@ export default function Results() {
       <div className="content-heading">
         <h2>Model observations</h2>
       </div>
+      <p className="small-disclaimer" style={{ marginBottom: 10 }}>
+        Each score is that model’s estimated likelihood that the media is AI-generated or manipulated.
+      </p>
       <div className="model-list card">
-        {demoResult.models.map((m, i) => (
+        {result.models.map((m, i) => (
           <motion.div
             className="model-row"
-            key={m.name}
+            key={m.key}
             initial={{ opacity: 0, x: -8 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.1 + i * 0.08, duration: 0.4 }}
@@ -139,11 +125,11 @@ export default function Results() {
               <div className="meter-track">
                 <motion.span
                   initial={{ width: 0 }}
-                  animate={{ width: `${m.score}%` }}
+                  animate={{ width: `${m.score ?? 0}%` }}
                   transition={{ delay: 0.3 + i * 0.06, duration: 0.7, ease: 'easeOut' }}
                 />
               </div>
-              <b>{m.score}%</b>
+              <b>{m.score === null ? '—' : `${m.score}%`}</b>
             </div>
           </motion.div>
         ))}
@@ -154,7 +140,7 @@ export default function Results() {
         <h2>Evidence</h2>
       </div>
       <div className="evidence-list card">
-        {demoResult.evidence.map((e, i) => (
+        {result.evidence.map((e, i) => (
           <motion.div
             className="evidence-item"
             key={e}
@@ -173,10 +159,10 @@ export default function Results() {
         <h2>Integrity & audit trail</h2>
       </div>
       <div className="integrity-section card">
-        {integrity.map(({ label, value }) => (
+        {result.integrity.map(({ label, value }) => (
           <div className="integrity-row" key={label}>
             <span className="integrity-label">{label}</span>
-            <span className="integrity-value">{value}</span>
+            <span className="integrity-value" style={{ wordBreak: 'break-all' }}>{value}</span>
           </div>
         ))}
       </div>
@@ -184,7 +170,7 @@ export default function Results() {
       {/* Disclaimer */}
       <div className="result-warning">
         <AlertCircle size={16} />
-        <p>Sample data — not a real analysis. Connect a backend for genuine model results. Automated detection can produce false positives and negatives.</p>
+        <p>Automated detection can produce false positives and negatives. Use this result to support human review, together with the source and context of the media.</p>
       </div>
     </div>
   )

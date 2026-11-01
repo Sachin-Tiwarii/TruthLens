@@ -13,7 +13,7 @@ timm==0.6.12
 efficientnet-pytorch>=0.7.1
 transformers>=4.20.0,<4.25.0
 
-dlib>=19.22.0,<19.25.0
+dlib-bin==19.24.6  # prebuilt dlib wheel: compiling dlib from source needs several GB of RAM and crashed Docker
 
 tensorboard>=2.9.0
 kornia==0.6.12

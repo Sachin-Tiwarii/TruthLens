@@ -1,38 +1,66 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { ArrowRight, AlertCircle, Image, AudioLines, Video, Lock } from 'lucide-react'
 import UploadZone from '../components/UploadZone'
-
-const getType = (file) => {
-  if (file.type.startsWith('image/')) return 'Image'
-  if (file.type.startsWith('audio/')) return 'Audio'
-  return 'Video'
-}
+import LoadingAnimation from '../components/LoadingAnimation'
+import { useAnalysisStore } from '../store/analysisStore'
 
 const steps = [
-  { n: '01', title: 'Upload', text: 'Submit your media. It is hashed on receipt for chain-of-custody integrity.' },
-  { n: '02', title: 'Analysis', text: 'Multiple forensic models run in parallel against the media.' },
+  { n: '01', title: 'Upload', text: 'Submit your media. Its SHA-256 fingerprint is recorded on receipt so the report is tied to the exact file.' },
+  { n: '02', title: 'Analysis', text: 'Every installed forensic model for that media type checks it, and their scores are combined.' },
   { n: '03', title: 'Report', text: 'Receive a verdict with confidence, evidence breakdown, and integrity metadata.' },
 ]
 
 export default function Analyze() {
-  const [file, setFile]       = useState(null)
-  const [purpose, setPurpose] = useState('General verification')
-  const [error, setError]     = useState('')
-  const navigate               = useNavigate()
+  const [file, setFile]           = useState(null)
+  const [purpose, setPurpose]     = useState('General verification')
+  const [fileError, setFileError] = useState('')
+  const navigate                  = useNavigate()
+  const mounted                   = useRef(true)
 
-  const handleSubmit = (e) => {
+  const analyze          = useAnalysisStore((s) => s.analyze)
+  const uploading        = useAnalysisStore((s) => s.uploadStatus === 'uploading')
+  const uploadFileName   = useAnalysisStore((s) => s.uploadFileName)
+  const uploadError      = useAnalysisStore((s) => s.uploadError)
+  const clearUploadError = useAnalysisStore((s) => s.clearUploadError)
+
+  useEffect(() => {
+    mounted.current = true
+    clearUploadError() // don't show an error left over from an earlier visit
+    return () => { mounted.current = false }
+  }, [clearUploadError])
+
+  const error = fileError || uploadError
+
+  const handleFile = (next) => {
+    setFile(next)
+    clearUploadError()
+  }
+
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!file) { setError('Please upload a file before continuing.'); return }
-    try {
-      sessionStorage.setItem('truthlens_upload', JSON.stringify({
-        name: file.name, type: getType(file), size: file.size,
-        purpose, uploadedAt: new Date().toISOString(),
-      }))
-    } catch {
-      setError('Unable to prepare your file. Please try again.'); return
-    }
-    navigate('/results/new')
+    if (!file) { setFileError('Please upload a file before continuing.'); return }
+    setFileError('')
+    const requestId = await analyze(file)
+    // If the user left the page meanwhile, the result is still saved in their history.
+    if (requestId && mounted.current) navigate(`/results/${requestId}`)
+  }
+
+  if (uploading) {
+    return (
+      <div>
+        <div className="page-header">
+          <h1 className="heading-lg">Analyze Media</h1>
+          <p className="body-copy">Running forensic analysis on {uploadFileName || 'your file'}.</p>
+        </div>
+        <div className="card">
+          <LoadingAnimation
+            label={`Analyzing ${uploadFileName || 'media'}`}
+            hint="Models run on CPU and load on first use, so this can take a few minutes. Videos take longer."
+          />
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -46,10 +74,10 @@ export default function Analyze() {
         <div className="analyze-main card">
           <div className="analyze-section-heading">
             <h2>Upload media</h2>
-            <p>Drag and drop or click to browse. Supported: JPG, PNG, WEBP, MP3, WAV, M4A, MP4, MOV, WEBM.</p>
+            <p>Drag and drop or click to browse. Supported: JPG, PNG, WEBP, MP3, WAV, M4A, FLAC, OGG, MP4, MOV, WEBM.</p>
           </div>
 
-          <UploadZone onFile={setFile} onError={setError} />
+          <UploadZone value={file} onFile={handleFile} onError={setFileError} />
 
           {error && (
             <div className="analyze-error" role="alert">

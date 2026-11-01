@@ -2,8 +2,9 @@ import { Link } from 'react-router-dom'
 import { ArrowUpRight, Search, Image, AudioLines, Video, FolderSearch } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { sampleAnalyses } from '../data/mockData'
 import VerdictBadge from '../components/VerdictBadge'
+import LoadingAnimation from '../components/LoadingAnimation'
+import { useAnalysisHistory } from '../hooks/useAnalysisHistory'
 
 const icons   = { Image, Audio: AudioLines, Video }
 const filters = ['All', 'Image', 'Audio', 'Video']
@@ -11,14 +12,15 @@ const filters = ['All', 'Image', 'Audio', 'Video']
 export default function History() {
   const [query,  setQuery]  = useState('')
   const [filter, setFilter] = useState('All')
+  const { records, loading, error } = useAnalysisHistory()
 
   const rows = useMemo(
-    () => sampleAnalyses.filter(
+    () => records.filter(
       (x) =>
         (filter === 'All' || x.type === filter) &&
         x.name.toLowerCase().includes(query.toLowerCase())
     ),
-    [query, filter]
+    [records, query, filter]
   )
 
   return (
@@ -62,7 +64,14 @@ export default function History() {
           <span />
         </div>
 
-        {rows.length ? (
+        {loading ? (
+          <LoadingAnimation label="Loading your analyses" hint="" />
+        ) : error ? (
+          <div className="empty-state" role="alert">
+            <FolderSearch size={32} />
+            <strong style={{ color: 'var(--text)' }}>{error}</strong>
+          </div>
+        ) : rows.length ? (
           rows.map((item, i) => {
             const Icon = icons[item.type] || Image
             return (
@@ -77,7 +86,7 @@ export default function History() {
                   <span className="file-icon"><Icon size={16} /></span>
                   <div>
                     <strong>{item.name}</strong>
-                    <small>{item.id}</small>
+                    <small>{item.ref}</small>
                   </div>
                 </div>
                 <span>{item.type}</span>
@@ -97,8 +106,19 @@ export default function History() {
         ) : (
           <div className="empty-state">
             <FolderSearch size={32} />
-            <strong style={{ color: 'var(--text)' }}>No matching analyses</strong>
-            <span style={{ fontSize: 13 }}>Try a different search or filter.</span>
+            {records.length ? (
+              <>
+                <strong style={{ color: 'var(--text)' }}>No matching analyses</strong>
+                <span style={{ fontSize: 13 }}>Try a different search or filter.</span>
+              </>
+            ) : (
+              <>
+                <strong style={{ color: 'var(--text)' }}>No analyses yet</strong>
+                <span style={{ fontSize: 13 }}>
+                  <Link to="/analyze" className="text-link">Analyze your first file</Link>
+                </span>
+              </>
+            )}
           </div>
         )}
       </div>

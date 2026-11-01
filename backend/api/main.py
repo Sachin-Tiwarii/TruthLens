@@ -42,6 +42,7 @@ import uvicorn
 from PIL import Image, UnidentifiedImageError
 import io
 import uuid
+import hashlib
 import joblib
 import numpy as np
 import pandas as pd
@@ -1043,6 +1044,7 @@ async def run_prediction(
     input_data: PredictInput,
     username: Optional[str] = None,
     media_name: Optional[str] = None,
+    media_info: Optional[Dict[str, Any]] = None,
 ) -> Dict[str, Any]:
     """Query all configured models, ensemble their outputs and save the result to history."""
     req_id = request.state.request_id
@@ -1161,6 +1163,8 @@ async def run_prediction(
         "model_results": model_query_results,
         "processing_mode": "CPU-only",
     }
+    if media_info:
+        response_payload.update(media_info)
 
     # Save to database history
     try:
@@ -1418,6 +1422,13 @@ async def detect_media_endpoint_api_form(
             predict_input_object,
             username=current_user["username"],
             media_name=file.filename,
+            # Fingerprint of the exact bytes received, stored with the result so a report
+            # can be tied to the original file (chain of custody).
+            media_info={
+                "media_sha256": hashlib.sha256(file_contents).hexdigest(),
+                "media_size_bytes": len(file_contents),
+                "media_content_type": content_type,
+            },
         )
 
         num_models_contributed = full_prediction_result.get("base_model_total_votes", 0)
@@ -1449,6 +1460,7 @@ async def detect_media_endpoint_api_form(
             "processing_mode": "CPU-only",
             "media_type_processed": inferred_media_type,
             "filename": file.filename,
+            "media_sha256": full_prediction_result.get("media_sha256"),
         }
         return ui_response
     except HTTPException:

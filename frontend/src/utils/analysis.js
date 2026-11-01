@@ -44,6 +44,12 @@ export const formatLongDate = (iso) =>
       })
     : ''
 
+const formatUtc = (iso) =>
+  iso ? new Date(iso).toISOString().replace('T', ' ').slice(0, 19) + ' UTC' : ''
+
+const formatBytes = (bytes) =>
+  bytes < 1024 * 1024 ? `${(bytes / 1024).toFixed(1)} KB` : `${(bytes / 1024 / 1024).toFixed(2)} MB`
+
 const modelLabel = (key) =>
   MODEL_LABELS[key] ||
   key.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
@@ -116,6 +122,18 @@ export function normalizeAnalysisDetail(detail) {
   const seconds = detail.inference_time ?? full.total_inference_time_seconds
   if (seconds != null) evidence.push(`Processed in ${Number(seconds).toFixed(1)} s on CPU.`)
 
+  // Real audit data. Older analyses (before hashing was added) have no SHA-256 or size.
+  const answered = models.filter((m) => m.score !== null).map((m) => m.name)
+  const integrity = [
+    { label: 'SHA-256', value: full.media_sha256 || 'Not recorded for this analysis' },
+    { label: 'Received at', value: formatUtc(detail.timestamp) },
+    full.media_size_bytes != null && { label: 'File size', value: formatBytes(full.media_size_bytes) },
+    { label: 'Models run', value: answered.length ? answered.join(', ') : 'None' },
+    method && { label: 'Ensemble method', value: method },
+    seconds != null && { label: 'Processing time', value: `${Number(seconds).toFixed(1)} s (CPU)` },
+    { label: 'Request ID', value: detail.request_id },
+  ].filter(Boolean)
+
   return {
     id: detail.request_id,
     ref: shortRef(detail.request_id),
@@ -127,6 +145,7 @@ export function normalizeAnalysisDetail(detail) {
     summary: summaryFor(detail.verdict, type),
     models,
     evidence,
+    integrity,
     date: formatDate(detail.timestamp),
     longDate: formatLongDate(detail.timestamp),
   }

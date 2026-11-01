@@ -69,4 +69,28 @@ ENV MODEL_TIMEOUT=600
 EXPOSE ${MODEL_PORT}
 
 # Command to run the application
+
+# Old PyTorch wheels (1.11/1.12) mark libtorch as needing an executable stack, which newer
+# Linux kernels/glibc refuse ("cannot enable executable stack"). Clear that ELF flag.
+RUN python - <<'EOF'
+import glob, struct, sysconfig
+site = sysconfig.get_paths()["purelib"]
+for path in glob.glob(f"{site}/torch*/**/*.so*", recursive=True):
+    with open(path, "r+b") as f:
+        hdr = f.read(64)
+        if hdr[:4] != b"\x7fELF" or hdr[4] != 2:
+            continue
+        phoff = struct.unpack_from("<Q", hdr, 0x20)[0]
+        phentsize, phnum = struct.unpack_from("<HH", hdr, 0x36)
+        for i in range(phnum):
+            off = phoff + i * phentsize
+            f.seek(off)
+            p_type, p_flags = struct.unpack("<II", f.read(8))
+            if p_type == 0x6474E551 and p_flags & 1:  # PT_GNU_STACK with PF_X
+                f.seek(off + 4)
+                f.write(struct.pack("<I", p_flags & ~1))
+                print("cleared executable-stack flag:", path)
+EOF
+RUN python -c "import torch; print('torch', torch.__version__, 'imports OK')"
+
 CMD ["python", "app.py"]
