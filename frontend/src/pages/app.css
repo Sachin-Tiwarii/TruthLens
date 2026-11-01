@@ -45,7 +45,7 @@
   background: var(--bg-alt); border-right: 1px solid var(--line);
 }
 .app-brand { display: inline-flex; align-items: center; gap: 0.65rem; padding: 0 0.4rem; }
-.app-mark { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 9px; color: #fff; background: linear-gradient(145deg, #5a78f5, #3a53c9); box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18); }
+.app-mark { flex: none; color: var(--text); }
 .app-brand-name { font: 600 1.2rem/1 var(--display); letter-spacing: -0.02em; }
 
 .app-nav { display: grid; gap: 0.2rem; }
@@ -292,7 +292,7 @@
 .app-sheet h1, .app-sheet h2, .app-sheet h3 { color: var(--ink); }
 .sheet-header { display: flex; justify-content: space-between; align-items: center; gap: 1rem; flex-wrap: wrap; padding-bottom: 1.25rem; border-bottom: 2px solid var(--ink); }
 .sheet-brand { display: inline-flex; align-items: center; gap: 0.6rem; font: 600 1.15rem var(--display); letter-spacing: -0.02em; }
-.sheet-mark { display: grid; place-items: center; width: 32px; height: 32px; color: #fff; background: #2f46b8; border-radius: 8px; }
+.sheet-mark { flex: none; color: var(--ink); }
 .sheet-meta { display: flex; flex-direction: column; text-align: right; font-size: 0.82rem; color: var(--ink-muted); }
 .sheet-meta strong { font: 500 0.82rem var(--mono); color: var(--ink); }
 .sheet-title { margin: 2rem 0 1.5rem; }

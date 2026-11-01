@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, Printer, ScanEye, FileText } from 'lucide-react'
+import { ArrowLeft, Printer, FileText } from 'lucide-react'
 import { demoResult } from '../data/mockData'
+import BrandMark from '../components/BrandMark'
 import './app.css'
 
 const integrity = [
@@ -27,7 +28,7 @@ export default function Report() {
       <article className="app-sheet">
         <header className="sheet-header">
           <div className="sheet-brand">
-            <span className="sheet-mark"><ScanEye size={17} aria-hidden="true" /></span>
+            <BrandMark size={26} className="sheet-mark" />
             <span>TruthLens</span>
           </div>
           <div className="sheet-meta">

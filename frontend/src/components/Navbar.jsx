@@ -1,8 +1,14 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
-import { ScanEye, ArrowRight, LogIn, Menu, X } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
 import { useEffect, useState } from 'react'
+import BrandMark from './BrandMark'
 import './chrome.css'
+
+const primaryLinks = [
+  { to: '/', label: 'Home' },
+  { to: '/about', label: 'About' },
+]
 
 export default function Navbar() {
   const loginDemo = useAuthStore((s) => s.loginDemo)
@@ -36,52 +42,51 @@ export default function Navbar() {
   }, [mobileOpen])
 
   return (
-    <header className="tl-header">
+    <header className={`tl-header${mobileOpen ? ' is-open' : ''}`}>
       <div className="tl-container tl-nav">
         <Link to="/" className="tl-brand" aria-label="TruthLens home">
-          <span className="tl-brand-mark"><ScanEye size={18} aria-hidden="true" /></span>
+          <BrandMark className="tl-brand-mark" />
           <span className="tl-brand-name">TruthLens</span>
         </Link>
 
         <nav className="tl-links" aria-label="Primary">
-          <Link to="/" {...linkProps('/')}>Home</Link>
-          <Link to="/about" {...linkProps('/about')}>About</Link>
+          {primaryLinks.map(({ to, label }) => (
+            <Link key={to} to={to} {...linkProps(to)}>{label}</Link>
+          ))}
         </nav>
 
         <div className="tl-actions">
-          <button type="button" className="tl-demo" onClick={handleDemoLogin}>
-            <LogIn size={14} aria-hidden="true" /> Try demo
-          </button>
-          <Link to="/login" className="tl-link">Sign in</Link>
-          <Link to="/register" className="tl-btn">
-            Get started <ArrowRight size={14} aria-hidden="true" />
-          </Link>
+          <button type="button" className="tl-link" onClick={handleDemoLogin}>Try the demo</button>
+          <Link to="/login" {...linkProps('/login')}>Sign in</Link>
+          <span className="tl-divider" aria-hidden="true" />
+          <Link to="/register" className="tl-btn">Get started</Link>
         </div>
 
         <button
           className="tl-burger"
           type="button"
-          aria-label="Toggle navigation menu"
+          aria-label={mobileOpen ? 'Close menu' : 'Open menu'}
           aria-expanded={mobileOpen}
           aria-controls="tl-mobile-nav"
           onClick={() => setMobileOpen((v) => !v)}
         >
-          {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+          {mobileOpen ? <X size={22} strokeWidth={1.75} /> : <Menu size={22} strokeWidth={1.75} />}
         </button>
       </div>
 
       {mobileOpen && (
         <div className="tl-container">
           <nav id="tl-mobile-nav" className="tl-drawer" aria-label="Mobile">
-            <Link to="/" {...linkProps('/')}>Home</Link>
-            <Link to="/about" {...linkProps('/about')}>About</Link>
-            <Link to="/login" className="tl-link">Sign in</Link>
-            <button type="button" className="tl-link tl-drawer-demo" onClick={handleDemoLogin}>
-              <LogIn size={15} aria-hidden="true" /> Continue as demo
-            </button>
-            <Link to="/register" className="tl-btn tl-btn-block">
-              Get started <ArrowRight size={14} aria-hidden="true" />
-            </Link>
+            {primaryLinks.map(({ to, label }) => (
+              <Link key={to} to={to} {...linkProps(to)}>{label}</Link>
+            ))}
+            <div className="tl-drawer-actions">
+              <Link to="/register" className="tl-btn">Get started</Link>
+              <Link to="/login" className="tl-btn tl-btn-ghost">Sign in</Link>
+              <button type="button" className="tl-drawer-demo" onClick={handleDemoLogin}>
+                Or try the demo without an account
+              </button>
+            </div>
           </nav>
         </div>
       )}

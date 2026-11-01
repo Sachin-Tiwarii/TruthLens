@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
-import { ScanEye, ExternalLink } from 'lucide-react'
+import { ExternalLink } from 'lucide-react'
+import BrandMark from './BrandMark'
 import './chrome.css'
 
 export default function Footer() {
@@ -8,7 +9,7 @@ export default function Footer() {
       <div className="tl-container tl-footer-grid">
         <div className="tl-footer-brand">
           <Link to="/" className="tl-brand" aria-label="TruthLens home">
-            <span className="tl-brand-mark"><ScanEye size={18} aria-hidden="true" /></span>
+            <BrandMark className="tl-brand-mark" />
             <span className="tl-brand-name">TruthLens</span>
           </Link>
           <p>

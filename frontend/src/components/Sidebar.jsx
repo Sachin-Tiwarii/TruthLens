@@ -1,6 +1,7 @@
 import { NavLink, Link, useNavigate } from 'react-router-dom'
-import { ScanEye, LayoutDashboard, ScanSearch, History, Home, Plus, LogOut } from 'lucide-react'
+import { LayoutDashboard, ScanSearch, History, Home, Plus, LogOut } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
+import BrandMark from './BrandMark'
 import '../pages/app.css'
 
 const navLinks = [
@@ -25,7 +26,7 @@ export default function Sidebar() {
   return (
     <aside className="app-sidebar">
       <Link to="/" className="app-brand" aria-label="TruthLens home">
-        <span className="app-mark"><ScanEye size={18} aria-hidden="true" /></span>
+        <BrandMark className="app-mark" />
         <span className="app-brand-name">TruthLens</span>
       </Link>
 
