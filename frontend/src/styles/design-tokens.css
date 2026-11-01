@@ -1,0 +1,62 @@
+/* ============================================
+   TRUTHLENS DESIGN TOKENS — v2 DARK PREMIUM
+   ============================================ */
+:root {
+  /* Backgrounds */
+  --bg:             #0B0E14;
+  --bg-alt:         #0F1318;
+  --surface:        #131820;
+  --surface-2:      #1A2030;
+  --surface-3:      #1F2638;
+
+  /* Borders */
+  --line:           #1E2842;
+  --line-soft:      #161E30;
+
+  /* Text */
+  --ink:            #EEF0F4;
+  --text:           #A8B3C8;
+  --muted:          #5C6B87;
+  --muted-2:        #3D4D66;
+
+  /* Accent — warm amber / gold */
+  --accent:         #D4A74A;
+  --accent-strong:  #B8862C;
+  --accent-soft:    rgba(212, 167, 74, 0.08);
+  --accent-glow:    rgba(212, 167, 74, 0.14);
+
+  /* Status — ok (authentic) */
+  --ok:             #2A9D6A;
+  --ok-soft:        rgba(42, 157, 106, 0.10);
+  --ok-border:      rgba(42, 157, 106, 0.25);
+
+  /* Status — warn (inconclusive) */
+  --warn:           #C98B3A;
+  --warn-soft:      rgba(201, 139, 58, 0.10);
+  --warn-border:    rgba(201, 139, 58, 0.25);
+
+  /* Status — bad (synthetic / manipulated) */
+  --bad:            #C04040;
+  --bad-soft:       rgba(192, 64, 64, 0.10);
+  --bad-border:     rgba(192, 64, 64, 0.25);
+
+  /* Typography */
+  --font-sans:      'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono:      'JetBrains Mono', ui-monospace, 'SF Mono', monospace;
+
+  /* Shape */
+  --radius:         12px;
+  --radius-sm:      8px;
+  --radius-xs:      5px;
+
+  /* Shadows */
+  --shadow-sm:      0 1px 3px rgba(0,0,0,.45), 0 4px 12px rgba(0,0,0,.30);
+  --shadow:         0 2px 8px rgba(0,0,0,.5), 0 16px 40px rgba(0,0,0,.4);
+  --shadow-lg:      0 4px 16px rgba(0,0,0,.6), 0 32px 80px rgba(0,0,0,.5);
+  --shadow-accent:  0 0 24px rgba(212,167,74,.18), 0 0 64px rgba(212,167,74,.08);
+
+  /* Transitions */
+  --t-fast:  120ms ease;
+  --t-base:  180ms ease;
+  --t-slow:  280ms ease;
+}

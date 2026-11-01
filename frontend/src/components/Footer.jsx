@@ -1,68 +1,39 @@
-import { NavLink, Link, useNavigate } from 'react-router-dom'
-import { ScanEye, LayoutDashboard, ScanSearch, History, Home, Plus, LogOut } from 'lucide-react'
-import { useAuthStore } from '../store/authStore'
+import { Link } from 'react-router-dom'
+import { ScanEye, ExternalLink } from 'lucide-react'
 
-const links = [
-  { name: 'Dashboard', path: '/dashboard', icon: LayoutDashboard },
-  { name: 'Analyze', path: '/analyze', icon: ScanSearch },
-  { name: 'History', path: '/history', icon: History },
-]
-
-export default function Sidebar() {
-  const user = useAuthStore((s) => s.user)
-  const logout = useAuthStore((s) => s.logout)
-  const navigate = useNavigate()
-
-  const handleLogout = () => {
-    logout()
-    navigate('/login')
-  }
-
+export default function Footer() {
   return (
-    <aside className="app-sidebar">
-      <Link to="/" className="brand sidebar-brand">
-        <span className="brand-mark"><ScanEye size={20} /></span>
-        <span className="brand-name">truth<span>lens</span></span>
-      </Link>
-
-      <Link to="/analyze" className="btn sidebar-new-analysis">
-        <Plus size={17} /> New analysis
-      </Link>
-
-      <nav className="sidebar-navigation" aria-label="Workspace">
-        <div className="sidebar-group">
-          <span className="sidebar-label">Menu</span>
-          {links.map(({ name, path, icon: Icon }) => (
-            <NavLink
-              key={path}
-              to={path}
-              className={({ isActive }) => `sidebar-link ${isActive ? 'active' : ''}`}
-            >
-              <Icon size={18} />
-              {name}
-            </NavLink>
-          ))}
+    <footer className="site-footer">
+      <div className="container footer-inner">
+        <div className="footer-brand">
+          <div className="brand">
+            <span className="brand-mark"><ScanEye size={17} /></span>
+            <span className="brand-name">Truth<span>Lens</span></span>
+          </div>
+          <p>
+            Forensic-grade AI media verification for journalists,
+            investigators, and legal professionals.
+          </p>
         </div>
-      </nav>
 
-      <div className="sidebar-bottom">
-        <Link to="/" className="sidebar-link">
-          <Home size={18} /> Home
-        </Link>
-
-        <div className="sidebar-user">
-          <div className="sidebar-avatar">
-            {user?.name?.charAt(0)?.toUpperCase() || 'U'}
-          </div>
-          <div className="sidebar-user-info">
-            <strong>{user?.name || 'Demo user'}</strong>
-            <small>{user?.email || 'demo@truthlens.ai'}</small>
-          </div>
-          <button className="icon-btn" type="button" onClick={handleLogout} aria-label="Sign out">
-            <LogOut size={16} />
-          </button>
+        <div className="footer-links-col">
+          <h4>Product</h4>
+          <nav className="footer-links">
+            <Link to="/">Home</Link>
+            <Link to="/about">About</Link>
+            <Link to="/register">Get started</Link>
+            <Link to="/login">Sign in</Link>
+          </nav>
         </div>
       </div>
-    </aside>
+
+      <div className="container footer-bottom">
+        <span>© {new Date().getFullYear()} TruthLens. All rights reserved.</span>
+        <a href="https://github.com" aria-label="GitHub" target="_blank" rel="noreferrer"
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--muted)', fontSize: 12 }}>
+          <ExternalLink size={13} /> Source
+        </a>
+      </div>
+    </footer>
   )
 }
