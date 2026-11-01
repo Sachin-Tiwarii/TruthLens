@@ -1,46 +1,38 @@
 import { Link } from 'react-router-dom'
-import { ArrowUpRight, Search, Image, AudioLines, Video } from 'lucide-react'
+import { ArrowUpRight, Search, Image, AudioLines, Video, FolderSearch } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { motion } from 'framer-motion'
+import { sampleAnalyses } from '../data/mockData'
 import VerdictBadge from '../components/VerdictBadge'
-import LoadingAnimation from '../components/LoadingAnimation'
-import { useAnalysisHistory } from '../hooks/useAnalysisHistory'
 
-const icons = { Image, Audio: AudioLines, Video }
+const icons   = { Image, Audio: AudioLines, Video }
 const filters = ['All', 'Image', 'Audio', 'Video']
 
 export default function History() {
-  const [query, setQuery] = useState('')
+  const [query,  setQuery]  = useState('')
   const [filter, setFilter] = useState('All')
-  const { records, loading, error } = useAnalysisHistory()
 
   const rows = useMemo(
-    () =>
-      records.filter(
-        (x) =>
-          (filter === 'All' || x.type === filter) &&
-          x.name.toLowerCase().includes(query.toLowerCase())
-      ),
-    [records, query, filter]
+    () => sampleAnalyses.filter(
+      (x) =>
+        (filter === 'All' || x.type === filter) &&
+        x.name.toLowerCase().includes(query.toLowerCase())
+    ),
+    [query, filter]
   )
 
-  const emptyMessage = records.length
-    ? 'No matching analyses.'
-    : 'No analyses yet. Run your first one from the Analyze page.'
-
   return (
-    <div className="history-page">
-      <div className="dashboard-heading">
-        <div>
-          <h1 className="heading-lg">History</h1>
-          <p className="body-copy">Revisit your previous assessments.</p>
-        </div>
+    <div>
+      <div className="page-header">
+        <h1 className="heading-lg">Case Library</h1>
+        <p className="body-copy">Revisit and export previous verification assessments.</p>
       </div>
 
       <div className="history-controls">
         <div className="search-box">
-          <Search size={16} />
+          <Search size={15} />
           <input
-            placeholder="Search files"
+            placeholder="Search by filename…"
             aria-label="Search files"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -62,36 +54,52 @@ export default function History() {
 
       <div className="table-card card">
         <div className="analysis-table table-head">
-          <span>File</span><span>Type</span><span>Date</span><span>Assessment</span><span>Confidence</span><span />
+          <span>File</span>
+          <span>Type</span>
+          <span>Date</span>
+          <span>Assessment</span>
+          <span>Confidence</span>
+          <span />
         </div>
-        {loading ? (
-          <LoadingAnimation label="Loading history" hint="" />
-        ) : error ? (
-          <div className="empty-state" role="alert">{error}</div>
-        ) : rows.length ? (
-          rows.map((item) => {
+
+        {rows.length ? (
+          rows.map((item, i) => {
             const Icon = icons[item.type] || Image
             return (
-              <div className="analysis-table" key={item.id}>
+              <motion.div
+                className="analysis-table"
+                key={item.id}
+                initial={{ opacity: 0, y: 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.04, duration: 0.3 }}
+              >
                 <div className="file-cell">
-                  <span className="file-icon"><Icon size={17} /></span>
+                  <span className="file-icon"><Icon size={16} /></span>
                   <div>
                     <strong>{item.name}</strong>
-                    <small>{item.ref}</small>
+                    <small>{item.id}</small>
                   </div>
                 </div>
                 <span>{item.type}</span>
                 <span>{item.date}</span>
                 <VerdictBadge verdict={item.verdict} />
                 <span className="conf-cell">{item.confidence}%</span>
-                <Link to={`/results/${item.id}`} className="table-action" aria-label={`View result for ${item.name}`}>
-                  <ArrowUpRight size={17} />
+                <Link
+                  to={`/results/${item.id}`}
+                  className="table-action"
+                  aria-label={`View result for ${item.name}`}
+                >
+                  <ArrowUpRight size={16} />
                 </Link>
-              </div>
+              </motion.div>
             )
           })
         ) : (
-          <div className="empty-state">{emptyMessage}</div>
+          <div className="empty-state">
+            <FolderSearch size={32} />
+            <strong style={{ color: 'var(--text)' }}>No matching analyses</strong>
+            <span style={{ fontSize: 13 }}>Try a different search or filter.</span>
+          </div>
         )}
       </div>
     </div>

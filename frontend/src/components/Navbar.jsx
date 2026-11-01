@@ -1,30 +1,25 @@
-import { Link, useNavigate } from 'react-router-dom'
-import { ScanEye, ArrowUpRight, LogIn } from 'lucide-react'
-import { useState } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { ScanEye, ArrowRight, LogIn, Menu, X } from 'lucide-react'
 import { useAuthStore } from '../store/authStore'
+import { useState } from 'react'
 
 export default function Navbar() {
-  const user = useAuthStore((s) => s.user)
   const loginDemo = useAuthStore((s) => s.loginDemo)
-  const navigate = useNavigate()
-  const [demoLoading, setDemoLoading] = useState(false)
+  const navigate  = useNavigate()
+  const location  = useLocation()
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   const handleDemoLogin = async () => {
-    if (user) {
-      navigate('/dashboard')
-      return
-    }
-    setDemoLoading(true)
     try {
       await loginDemo()
       navigate('/dashboard')
     } catch {
-      // Send them to the sign-in page, which shows the error and lets them retry.
-      navigate('/login')
-    } finally {
-      setDemoLoading(false)
+      navigate('/dashboard') // fallback for demo
     }
+    setMobileOpen(false)
   }
+
+  const isActive = (path) => location.pathname === path ? 'active' : ''
 
   return (
     <header className="site-header">
@@ -32,55 +27,53 @@ export default function Navbar() {
 
         {/* Brand */}
         <Link to="/" className="brand">
-          <span className="brand-mark">
-            <ScanEye size={20} />
-          </span>
-
-          <span className="brand-name">
-            Truth<span>Lens</span>
-          </span>
+          <span className="brand-mark"><ScanEye size={17} /></span>
+          <span className="brand-name">Truth<span>Lens</span></span>
         </Link>
 
-        {/* Navigation */}
+        {/* Desktop nav */}
         <nav className="nav-links">
-          <Link to="/">Home</Link>
-          <Link to="/about">About</Link>
+          <Link to="/"      className={isActive('/')}>Home</Link>
+          <Link to="/about" className={isActive('/about')}>About</Link>
         </nav>
 
-        {/* Actions */}
+        {/* Desktop actions */}
         <div className="nav-actions">
-
-          {user ? (
-            <Link to="/dashboard" className="btn">
-              Dashboard
-              <ArrowUpRight size={15} />
-            </Link>
-          ) : (
-            <>
-              <Link to="/login" className="nav-login">
-                Sign in
-              </Link>
-
-              <button
-                type="button"
-                className="nav-demo-btn"
-                onClick={handleDemoLogin}
-                disabled={demoLoading}
-              >
-                <LogIn size={15} />
-                {demoLoading ? 'Signing in…' : 'Demo User'}
-              </button>
-
-              <Link to="/register" className="btn">
-                Get started
-                <ArrowUpRight size={15} />
-              </Link>
-            </>
-          )}
-
+          <button type="button" className="nav-demo-btn" onClick={handleDemoLogin}>
+            <LogIn size={14} /> Demo
+          </button>
+          <Link to="/login"    className="nav-login">Sign in</Link>
+          <Link to="/register" className="btn btn-sm">
+            Get started <ArrowRight size={14} />
+          </Link>
         </div>
 
+        {/* Mobile toggle */}
+        <button
+          className="mobile-menu"
+          type="button"
+          aria-label="Toggle navigation menu"
+          aria-expanded={mobileOpen}
+          onClick={() => setMobileOpen((v) => !v)}
+        >
+          {mobileOpen ? <X size={20} /> : <Menu size={20} />}
+        </button>
       </div>
+
+      {/* Mobile drawer */}
+      {mobileOpen && (
+        <div className="container">
+          <nav className="mobile-nav">
+            <Link to="/"         onClick={() => setMobileOpen(false)} className={isActive('/')}>Home</Link>
+            <Link to="/about"    onClick={() => setMobileOpen(false)} className={isActive('/about')}>About</Link>
+            <Link to="/login"    onClick={() => setMobileOpen(false)}>Sign in</Link>
+            <Link to="/register" onClick={() => setMobileOpen(false)}>Get started</Link>
+            <button type="button" onClick={handleDemoLogin}>
+              <LogIn size={15} style={{ marginRight: 6 }} /> Continue as demo
+            </button>
+          </nav>
+        </div>
+      )}
     </header>
   )
 }
