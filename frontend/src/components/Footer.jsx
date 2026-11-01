@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { ScanEye, ExternalLink } from 'lucide-react'
+import { ScanEye, Github, Twitter } from 'lucide-react'
 
 export default function Footer() {
   return (
@@ -29,10 +29,16 @@ export default function Footer() {
 
       <div className="container footer-bottom">
         <span>© {new Date().getFullYear()} TruthLens. All rights reserved.</span>
-        <a href="https://github.com" aria-label="GitHub" target="_blank" rel="noreferrer"
-          style={{ display: 'inline-flex', alignItems: 'center', gap: 5, color: 'var(--muted)', fontSize: 12 }}>
-          <ExternalLink size={13} /> Source
-        </a>
+        <div style={{ display: 'flex', gap: 16 }}>
+          <a href="https://github.com" aria-label="GitHub" target="_blank" rel="noreferrer"
+            style={{ color: 'var(--muted)', display: 'grid', placeItems: 'center' }}>
+            <Github size={16} />
+          </a>
+          <a href="https://twitter.com" aria-label="Twitter / X" target="_blank" rel="noreferrer"
+            style={{ color: 'var(--muted)', display: 'grid', placeItems: 'center' }}>
+            <Twitter size={16} />
+          </a>
+        </div>
       </div>
     </footer>
   )
