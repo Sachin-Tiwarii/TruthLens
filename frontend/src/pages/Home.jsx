@@ -11,7 +11,7 @@ import {
   FileCheck2,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import ForensicSpecimen from './ForensicSpecimen.jsx'
+import ForensicSpecimen from './Forensicspecimen.jsx';
 import './home.css'
 
 const capabilities = [

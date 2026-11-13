@@ -124,15 +124,37 @@
 
 /* Hero */
 .hp-hero {
-  padding: clamp(3rem, 7vw, 6rem) 0 clamp(3.5rem, 7vw, 6rem);
-  overflow: hidden;
+  padding: clamp(1.5rem, 2.5vw, 2.5rem) 0 3rem;
+  overflow: visible;
 }
 
 .hp-hero-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+
+  /* More room for the 3D model */
+  grid-template-columns:
+    minmax(0, 0.9fr)
+    minmax(0, 1.1fr);
+
   align-items: center;
-  gap: clamp(2rem, 5vw, 5rem);
+  gap: clamp(2.5rem, 5vw, 5rem);
+}
+
+/* Text column */
+.hp-hero-grid > :first-child {
+  min-width: 0;
+  position: relative;
+  z-index: 2;
+}
+
+/* 3D model column */
+.hp-hero-grid > :last-child {
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .hp-actions {
@@ -170,8 +192,13 @@
   position: relative;
   aspect-ratio: 1 / 1;
   width: 100%;
-  max-width: 560px;
+  max-width: 600px;
   margin-inline: auto;
+
+  /* Shift the globe away from text */
+  transform: translateX(4%);
+
+  overflow: visible;
 }
 
 .hp-stage-glow {
@@ -189,6 +216,7 @@
 .hp-specimen {
   position: absolute;
   inset: 0;
+  overflow: visible;
 }
 
 .hp-specimen canvas {
@@ -327,10 +355,18 @@
 @media (max-width: 980px) {
   .hp-hero-grid {
     grid-template-columns: 1fr;
+    gap: 2rem;
+  }
+
+  .hp-hero-grid > :last-child {
+    width: 100%;
   }
 
   .hp-stage {
+    width: 100%;
     max-width: 480px;
+    margin-inline: auto;
+    transform: none;
   }
 
   .hp-cap-grid {
@@ -373,5 +409,13 @@
 
   .hp-container {
     width: min(100% - 2rem, 1200px);
+  }
+
+  .hp-hero {
+    padding-top: 1.5rem;
+  }
+
+  .hp-stage {
+    max-width: 100%;
   }
 }
